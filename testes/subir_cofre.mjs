@@ -67,6 +67,13 @@ console.log("\n=== de novo, nada novo ===");
 r = await subir({ N, servidor: SERVIDOR, senha: SENHA, dados: DADOS, avisar: calado });
 ok(r.novas === 0 && (await lerCofre()).versao === versao, "não regrava o cofre à toa");
 
+console.log("\n=== só os dados do cartão mudaram ===");
+const comCartao = Object.assign({}, DADOS, { cartoes: [{ conta: "acc-1", pessoa: "p1", nome: "Nubank", limite: 5000, disponivel: 4000,
+  vencimento: "2026-10-15", fechamento: "2026-10-08", faturas: [], previstas: [], atualizadoEm: "2026-10-09T10:00:00-03:00" }] });
+r = await subir({ N, servidor: SERVIDOR, senha: SENHA, dados: comCartao, avisar: calado });
+({ versao, estado } = await lerCofre());
+ok(r.novas === 0 && r.cartoes === 1 && estado.cartoes["acc-1"].limite === 5000, "sobe mesmo sem transação nova", JSON.stringify(r));
+
 console.log("\n=== o celular apagou uma; o script não ressuscita ===");
 N.apagar(estado, "pg-t1");
 await fetch(URL_COFRE, { method: "PUT", headers: { "Content-Type": "application/json" },

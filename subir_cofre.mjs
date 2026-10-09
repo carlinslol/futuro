@@ -96,7 +96,7 @@ export async function subir({ N, servidor, senha, dados, buscar = fetch, avisar 
 
     const antes = estado.transacoes.length;
     const res = N.importarPluggy(estado, dados);
-    if (!res.novas) {
+    if (!res.novas && !res.cartoes && !res.completadas) {
       avisar("Nada novo para subir: as " + dados.transacoes.length + " transações baixadas já estão no cofre.");
       return { novas: 0, versao: j.versao, total: antes };
     }
@@ -111,8 +111,12 @@ export async function subir({ N, servidor, senha, dados, buscar = fetch, avisar 
       throw new Erro("O site recusou a gravação (" + p.status + "): " + (e.erro || "sem detalhe"));
     }
     const v = await p.json();
-    avisar(res.novas + " transações novas subiram para o cofre (agora são " + estado.transacoes.length + ").");
-    return { novas: res.novas, versao: v.versao, total: estado.transacoes.length };
+    const extras = [];
+    if (res.cartoes) extras.push("dados de " + res.cartoes + " cartão(ões) atualizados");
+    if (res.completadas) extras.push(res.completadas + " transações ganharam parcela/fatura");
+    avisar(res.novas + " transações novas subiram para o cofre (agora são " + estado.transacoes.length + ")" +
+      (extras.length ? "; " + extras.join("; ") : "") + ".");
+    return { novas: res.novas, cartoes: res.cartoes, completadas: res.completadas, versao: v.versao, total: estado.transacoes.length };
   }
   throw new Erro("O cofre mudou 5 vezes seguidas enquanto eu gravava. Tente de novo daqui a pouco.");
 }

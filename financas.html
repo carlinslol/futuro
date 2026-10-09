@@ -164,6 +164,24 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
 .cat-orc { grid-column: 2 / 4; font-size: 12px; color: var(--tinta-2); margin-top: -2px; }
 .cat-orc.acima { color: var(--ruim); font-weight: 600; }
 
+/* Cartão */
+.limite { margin: 4px 0 14px; }
+.limite-trilho { height: 10px; border-radius: 5px; background: var(--superficie-2); overflow: hidden; margin: 6px 0 4px; }
+.limite-uso { height: 100%; border-radius: 5px; }
+.fatura-atual { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.fatura-atual .valor { font-size: 28px; font-weight: 700; }
+.nota { font-size: 13px; color: var(--tinta-2); margin: 6px 0 0; }
+.cartao-cab { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 16px; }
+.cartao-cab .mudo { font-weight: 400; font-size: 13px; }
+.colunas.baixas { height: 130px; }
+.col-rotulos .atual-rotulo { color: var(--tinta); font-weight: 600; }
+.parcela-n { font-variant-numeric: tabular-nums; color: var(--tinta-2); white-space: nowrap; }
+@media (max-width: 520px) {
+  .lista-parc li { flex-wrap: wrap; }
+  .lista-parc .desc-curta { flex: 1 1 100%; white-space: normal; }
+  .lista-parc .num { margin-left: auto; white-space: normal; text-align: right; }
+}
+
 /* Colunas por mês */
 .colunas { display: flex; align-items: flex-end; gap: 10px; height: 170px; padding-top: 8px; border-bottom: 1px solid var(--base); }
 .coluna { flex: 1; display: flex; flex-direction: column-reverse; gap: 2px; height: 100%; cursor: default; }
@@ -300,6 +318,7 @@ pre { background: var(--superficie-2); padding: 10px 12px; border-radius: 8px; o
     <nav class="abas" role="tablist">
       <button class="aba" role="tab" data-aba="resumo" aria-selected="true">Resumo</button>
       <button class="aba" role="tab" data-aba="transacoes">Transações</button>
+      <button class="aba" role="tab" data-aba="cartao">Cartão</button>
       <button class="aba" role="tab" data-aba="importar">Importar</button>
       <button class="aba" role="tab" data-aba="config">Configurar</button>
     </nav>
@@ -314,6 +333,7 @@ pre { background: var(--superficie-2); padding: 10px 12px; border-radius: 8px; o
 <main>
   <section class="painel ativo" id="painel-resumo"></section>
   <section class="painel" id="painel-transacoes"></section>
+  <section class="painel" id="painel-cartao"></section>
   <section class="painel" id="painel-importar"></section>
   <section class="painel" id="painel-config"></section>
 </main>
@@ -609,6 +629,7 @@ function estadoPadrao() {
     regras: regras,
     transacoes: [],
     apagadas: {},                 // id -> quando foi apagada (para não voltar na sincronização)
+    cartoes: {},                  // id da conta no Pluggy -> limite, faturas, previstas (do banco)
     configAlterada: 0,            // quando nomes/categorias/regras mudaram pela última vez
     pluggy: { geradoEm: null }
   };
@@ -631,6 +652,7 @@ function completar(e) {
   e.pluggy = e.pluggy || { geradoEm: null };
   e.apagadas = e.apagadas && typeof e.apagadas === "object" ? e.apagadas : {};
   e.configAlterada = Number(e.configAlterada) || 0;
+  e.cartoes = e.cartoes && typeof e.cartoes === "object" && !Array.isArray(e.cartoes) ? e.cartoes : {};
   return e;
 }
 
@@ -716,6 +738,7 @@ function importar(e, contaId, itens, origem) {
       valor: arred(it.valor), categoria: c.categoria, divisao: c.divisao, origem: origem,
       alterado: agora
     });
+    copiarCamposCartao(e.transacoes[e.transacoes.length - 1], it);
     novas++;
   });
   e.transacoes.sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; });
@@ -723,20 +746,46 @@ function importar(e, contaId, itens, origem) {
 }
 
 /* Os dados do financas_pluggy.py: window.FINANCAS_PLUGGY */
+/* Campos do cartão que vêm do Pluggy: parcela 3 de 10, a fatura em que a
+   compra cai (AAAA-MM, mês do vencimento) e o id da fatura no banco. */
+var CAMPOS_CARTAO = ["parcela", "parcelas", "fatura", "billId"];
+function copiarCamposCartao(t, it) {
+  var mudou = false;
+  CAMPOS_CARTAO.forEach(function (k) {
+    if (it[k] != null && it[k] !== "" && t[k] == null) { t[k] = it[k]; mudou = true; }
+  });
+  return mudou;
+}
+
+/* Os dados do financas_pluggy.py: window.FINANCAS_PLUGGY */
 function importarPluggy(e, dados) {
-  if (!dados || !Array.isArray(dados.transacoes)) return { novas: 0, repetidas: 0 };
-  var porConta = {};
+  if (!dados || !Array.isArray(dados.transacoes)) return { novas: 0, repetidas: 0, cartoes: 0, completadas: 0 };
+  var porConta = {}, porId = {};
+  e.transacoes.forEach(function (t) { porId[t.id] = t; });
+  var completadas = 0;
   dados.transacoes.forEach(function (t) {
     if (PESSOAS.indexOf(t.pessoa) === -1) return;
     var conta = t.pessoa + "-" + (t.tipo === "cartao" ? "cartao" : "conta");
-    (porConta[conta] = porConta[conta] || []).push({
-      id: "pg-" + t.id, data: t.data, descricao: t.descricao, valor: Number(t.valor), dica: t.categoriaPluggy
-    });
+    var it = {
+      id: "pg-" + t.id, data: t.data, descricao: t.descricao, valor: Number(t.valor), dica: t.categoriaPluggy,
+      parcela: t.parcela, parcelas: t.parcelas, fatura: t.fatura, billId: t.billId
+    };
+    // transação que já veio antes, sem os dados do cartão: completa (uma vez)
+    if (porId[it.id] && copiarCamposCartao(porId[it.id], it)) completadas++;
+    (porConta[conta] = porConta[conta] || []).push(it);
   });
-  var tot = { novas: 0, repetidas: 0 };
+  var tot = { novas: 0, repetidas: 0, cartoes: 0, completadas: completadas };
   Object.keys(porConta).forEach(function (conta) {
     var r = importar(e, conta, porConta[conta], "pluggy");
     tot.novas += r.novas; tot.repetidas += r.repetidas;
+  });
+  (dados.cartoes || []).forEach(function (c) {
+    if (!c || !c.conta || PESSOAS.indexOf(c.pessoa) === -1) return;
+    var atual = e.cartoes[c.conta];
+    if (!atual || String(c.atualizadoEm || "") > String(atual.atualizadoEm || "")) {
+      e.cartoes[c.conta] = JSON.parse(JSON.stringify(c));
+      tot.cartoes++;
+    }
   });
   e.pluggy.geradoEm = dados.geradoEm || null;
   return tot;
@@ -789,6 +838,10 @@ function mesclar(e, outro) {
     e.categorias = copia.categorias; e.regras = copia.regras;
     e.configAlterada = copia.configAlterada;
   }
+  Object.keys(outro.cartoes).forEach(function (k) {
+    var a = e.cartoes[k], b = outro.cartoes[k];
+    if (!a || String(b.atualizadoEm || "") > String(a.atualizadoEm || "")) e.cartoes[k] = JSON.parse(JSON.stringify(b));
+  });
   if (outro.pluggy.geradoEm && (!e.pluggy.geradoEm || outro.pluggy.geradoEm > e.pluggy.geradoEm))
     e.pluggy.geradoEm = outro.pluggy.geradoEm;
   e.transacoes.sort(function (a, b) {
@@ -943,6 +996,173 @@ function resumoMes(e, mes) {
   return r;
 }
 
+/* ---------------------------------------------------------------- cartão
+
+   As faturas são chamadas pelo mês do VENCIMENTO ("a fatura de novembro" é
+   a que vence em novembro). De onde vem a fatura de cada compra, em ordem:
+   1. o id da fatura no banco (Pluggy), casado com a lista de faturas;
+   2. a previsão do banco (Open Finance: AAAA-MM), que vale até para futuras;
+   3. a conta pelos dias de fechamento e vencimento: compra antes do dia de
+      fechamento cai na fatura que fecha naquele mês; no dia ou depois, na
+      do mês seguinte. Sem os dias, fica o mês da compra (estimativa). */
+
+function infoParcela(t) {
+  var k = Number(t.parcela), n = Number(t.parcelas);
+  if (n > 1 && k >= 1 && k <= n) return { k: k, n: n };
+  var m = /parcela\s*(\d{1,2})\s*(?:\/|de)\s*(\d{1,2})/i.exec(t.descricao || "");
+  if (m) {
+    k = Number(m[1]); n = Number(m[2]);
+    if (n > 1 && k >= 1 && k <= n) return { k: k, n: n };
+  }
+  return null;
+}
+/* "Amazon - Parcela 3/10" e "Amazon - Parcela 4/10" são a mesma compra. */
+function baseParcela(descricao) {
+  return normalizar(String(descricao || "").replace(/[-–]?\s*parcela\s*\d{1,2}\s*(?:\/|de)\s*\d{1,2}/i, ""));
+}
+
+/* Os dados do cartão de uma pessoa: o que o banco mandou (Pluggy) mais os
+   dias de fechamento/vencimento que vocês puseram em Configurar. */
+function cartaoDe(e, p) {
+  var banco = null;
+  Object.keys(e.cartoes || {}).forEach(function (k) {
+    var c = e.cartoes[k];
+    if (c.pessoa === p && (!banco || String(c.atualizadoEm || "") > String(banco.atualizadoEm || ""))) banco = c;
+  });
+  var conf = e.pessoas[p] || {};
+  var dia = function (iso) { return iso ? Number(String(iso).slice(8, 10)) : 0; };
+  var fechamento = dia(banco && banco.fechamento) || Number(conf.diaFechamento) || 0;
+  var vencimento = dia(banco && banco.vencimento) || Number(conf.diaVencimento) || 0;
+  return { banco: banco, diaFechamento: fechamento, diaVencimento: vencimento };
+}
+
+/* Mês de vencimento da fatura em que cai uma compra feita na data d. */
+function mesDaFatura(cartao, d) {
+  var mes = mesDe(d);
+  var F = cartao.diaFechamento, V = cartao.diaVencimento;
+  if (!F) return mes;
+  var fecha = Number(String(d).slice(8, 10)) < F ? mes : somarMes(mes, 1);
+  return V && V <= F ? somarMes(fecha, 1) : fecha;
+}
+
+function faturaDa(cartao, t) {
+  var bills = (cartao.banco && cartao.banco.faturas) || [];
+  if (t.billId) {
+    for (var i = 0; i < bills.length; i++)
+      if (bills[i].id === t.billId && bills[i].vencimento) return mesDe(bills[i].vencimento);
+  }
+  if (t.fatura && /^\d{4}-\d{2}$/.test(t.fatura)) return t.fatura;
+  return mesDaFatura(cartao, t.data);
+}
+
+/* Tudo o que a aba Cartão mostra de uma pessoa. hoje = "AAAA-MM-DD". */
+function resumoCartao(e, p, hoje) {
+  var cartao = cartaoDe(e, p), banco = cartao.banco;
+  var conta = p + "-cartao";
+  var doCartao = e.transacoes.filter(function (t) { return t.conta === conta && t.categoria !== "fora"; });
+
+  // fatura aberta: a do banco, se veio; senão, a de uma compra feita hoje
+  var aberta = banco && banco.vencimento ? mesDe(banco.vencimento) : mesDaFatura(cartao, hoje);
+
+  var porMes = {};
+  function no(mes) {
+    return porMes[mes] = porMes[mes] || { mes: mes, lancado: 0, parcelas: 0, previsto: 0, itens: [] };
+  }
+  var series = {};
+  doCartao.forEach(function (t) {
+    var mes = faturaDa(cartao, t);
+    var m = no(mes);
+    m.lancado += t.valor;
+    m.itens.push({ descricao: t.descricao, valor: t.valor, data: t.data, tipo: "lancado" });
+    var pc = infoParcela(t);
+    if (pc) {
+      var chave = baseParcela(t.descricao) + "|" + pc.n + "|" + Math.round(Math.abs(t.valor) * 100);
+      var s = series[chave] = series[chave] || { descricao: t.descricao, valor: t.valor, n: pc.n, vistas: {}, ultima: null };
+      s.vistas[pc.k] = mes;
+      if (!s.ultima || pc.k > s.ultima.k) { s.ultima = { k: pc.k, mes: mes }; s.descricao = t.descricao; }
+    }
+  });
+
+  // o que o banco já prevê (compras pendentes e parcelas futuras, Open Finance)
+  var previstasPorChave = {};
+  ((banco && banco.previstas) || []).forEach(function (x) {
+    var mes = x.fatura && /^\d{4}-\d{2}$/.test(x.fatura) ? x.fatura : mesDaFatura(cartao, x.data || hoje);
+    if (mes < aberta) return;
+    var m = no(mes);
+    m.previsto += Number(x.valor) || 0;
+    m.itens.push({ descricao: x.descricao, valor: Number(x.valor) || 0, data: x.data, tipo: "previsto" });
+    var pc = infoParcela(x);
+    if (pc) previstasPorChave[baseParcela(x.descricao) + "|" + pc.n + "|" + pc.k] = true;
+  });
+
+  // parcelas que ainda vão cair: k+1..n nos meses seguintes ao da última vista
+  var parcelamentos = [];
+  Object.keys(series).forEach(function (chave) {
+    var s = series[chave], u = s.ultima, base = chave.split("|")[0];
+    var restantes = 0;
+    for (var j = u.k + 1; j <= s.n; j++) {
+      if (s.vistas[j] || previstasPorChave[base + "|" + s.n + "|" + j]) continue;
+      var mes = somarMes(u.mes, j - u.k);
+      var m = no(mes);
+      m.parcelas += s.valor;
+      m.itens.push({ descricao: s.descricao.replace(/(parcela\s*)\d{1,2}/i, "$1" + j), valor: s.valor, tipo: "parcela" });
+      restantes++;
+    }
+    var termina = somarMes(u.mes, s.n - u.k);
+    if (termina >= aberta) {
+      parcelamentos.push({
+        descricao: s.descricao.replace(/\s*[-–]?\s*parcela\s*\d{1,2}\s*(?:\/|de)\s*\d{1,2}/i, ""),
+        k: u.k, n: s.n, valor: arred(s.valor), falta: arred(s.valor * (s.n - u.k)), termina: termina
+      });
+    }
+  });
+  parcelamentos.sort(function (a, b) { return a.termina < b.termina ? 1 : a.termina > b.termina ? -1 : b.falta - a.falta; });
+
+  var meses = [];
+  for (var i = 0; i < 6; i++) {
+    var mes = somarMes(aberta, i), x = porMes[mes] || { mes: mes, lancado: 0, parcelas: 0, previsto: 0, itens: [] };
+    meses.push({
+      mes: mes, lancado: arred(x.lancado), parcelas: arred(x.parcelas), previsto: arred(x.previsto),
+      total: arred(x.lancado + x.parcelas + x.previsto), itens: x.itens
+    });
+  }
+
+  // faturas anteriores: as do banco; sem banco, a soma das compras
+  var anteriores = [];
+  var bills = (banco && banco.faturas) || [];
+  if (bills.length) {
+    bills.forEach(function (b) {
+      if (b.vencimento && mesDe(b.vencimento) < aberta)
+        anteriores.push({ mes: mesDe(b.vencimento), total: arred(Number(b.total) || 0), vencimento: b.vencimento, fonte: "banco" });
+    });
+  } else {
+    Object.keys(porMes).forEach(function (mes) {
+      if (mes < aberta && porMes[mes].lancado) anteriores.push({ mes: mes, total: arred(porMes[mes].lancado), fonte: "compras" });
+    });
+  }
+  anteriores.sort(function (a, b) { return a.mes < b.mes ? 1 : -1; });
+
+  var info = null;
+  if (banco) {
+    var limite = Number(banco.limite), disp = Number(banco.disponivel);
+    info = {
+      limite: isFinite(limite) && banco.limite != null ? limite : null,
+      disponivel: isFinite(disp) && banco.disponivel != null ? disp : null,
+      saldo: banco.saldo != null ? Number(banco.saldo) : null,
+      minimo: banco.minimo != null ? Number(banco.minimo) : null,
+      fechamento: banco.fechamento || null, vencimento: banco.vencimento || null,
+      bandeira: banco.bandeira || "", nome: banco.nome || "", atualizadoEm: banco.atualizadoEm || null
+    };
+  }
+  return {
+    temDados: doCartao.length > 0 || !!banco,
+    aberta: aberta, info: info,
+    diaFechamento: cartao.diaFechamento, diaVencimento: cartao.diaVencimento,
+    estimado: !banco && !cartao.diaFechamento,
+    meses: meses, parcelamentos: parcelamentos.slice(0, 50), anteriores: anteriores.slice(0, 6)
+  };
+}
+
 function somarMes(mes, delta) {
   var a = Number(mes.slice(0, 4)), m = Number(mes.slice(5, 7)) - 1 + delta;
   a += Math.floor(m / 12); m = ((m % 12) + 12) % 12;
@@ -996,7 +1216,9 @@ var Nucleo = {
   gerarSenha: gerarSenha, limparSenha: limparSenha,
   pessoaDaConta: pessoaDaConta, tipoDaConta: tipoDaConta, outra: outra, mesDe: mesDe, categoria: categoria,
   ehGasto: ehGasto, pct: pct, resumoMes: resumoMes, somarMes: somarMes,
-  serieMeses: serieMeses, sugerirTermo: sugerirTermo, descricaoCurta: descricaoCurta, arred: arred
+  serieMeses: serieMeses, sugerirTermo: sugerirTermo,
+  infoParcela: infoParcela, baseParcela: baseParcela, cartaoDe: cartaoDe, mesDaFatura: mesDaFatura,
+  resumoCartao: resumoCartao, descricaoCurta: descricaoCurta, arred: arred
 };
 if (typeof module !== "undefined" && module.exports) module.exports = Nucleo;
 raiz.Nucleo = Nucleo;
@@ -1241,6 +1463,7 @@ function desenhar() {
   $("#mes-nome").textContent = nomeMes(mesAtual);
   if (abaAtiva === "resumo") desenharResumo();
   else if (abaAtiva === "transacoes") desenharTransacoes();
+  else if (abaAtiva === "cartao") desenharCartao();
   else if (abaAtiva === "importar") desenharImportar();
   else desenharConfig();
 }
@@ -1535,6 +1758,113 @@ function formNova() {
 }
 
 /* =============================================================== IMPORTAR */
+/* ================================================================= CARTÃO */
+function hojeISO() {
+  var d = new Date();
+  return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+}
+function mesCurto(m) { return MESES_CURTOS[Number(m.slice(5, 7)) - 1] + "/" + m.slice(2, 4); }
+
+function desenharCartao() {
+  var el = $("#painel-cartao");
+  var hoje = hojeISO();
+  var h = '<div class="grade grade-2">';
+  ["p1", "p2"].forEach(function (p) {
+    var r = N.resumoCartao(estado, p, hoje);
+    h += '<div class="cartao">';
+    h += '<h2 class="cartao-cab">' + bolinha(p) + esc(nome(p)) +
+      (r.info && (r.info.nome || r.info.bandeira) ? ' <span class="mudo">· ' + esc([r.info.nome, r.info.bandeira].filter(Boolean).join(" · ")) + "</span>" : "") + "</h2>";
+    if (!r.temDados) {
+      h += '<p class="sub" style="margin:0">Ainda sem dados do cartão de ' + esc(nome(p)) + '. Importe a fatura (CSV) em ' +
+        '<a href="#" data-ir="importar">Importar</a>, ou conecte o Meu Pluggy com o cartão incluído.</p></div>';
+      return;
+    }
+
+    // limite
+    if (r.info && r.info.limite) {
+      var disp = r.info.disponivel != null ? r.info.disponivel : null;
+      var usado = disp != null ? r.info.limite - disp : null;
+      var pc = usado != null ? Math.max(0, Math.min(100, usado / r.info.limite * 100)) : 0;
+      h += '<div class="limite"><div class="sub">Limite</div>' +
+        '<div class="limite-trilho" data-dica="Usado ' + esc(brl(usado)) + " de " + esc(brl(r.info.limite)) + '">' +
+        '<div class="limite-uso b-' + p + '" style="width:' + pc + '%"></div></div>' +
+        '<div class="sub">usado <strong>' + brl(usado) + "</strong> de " + brl(r.info.limite) +
+        (disp != null ? " · disponível <strong>" + brl(disp) + "</strong>" : "") + "</div></div>";
+    }
+
+    // fatura atual
+    var atual = r.meses[0];
+    var datas = [];
+    if (r.info && r.info.fechamento) datas.push("fecha " + dataBR(r.info.fechamento));
+    else if (r.diaFechamento) datas.push("fecha dia " + r.diaFechamento);
+    if (r.info && r.info.vencimento) datas.push("vence " + dataBR(r.info.vencimento));
+    else if (r.diaVencimento) datas.push("vence dia " + r.diaVencimento);
+    h += '<div class="sub">Fatura atual · vence em ' + MESES[Number(r.aberta.slice(5, 7)) - 1] + "</div>";
+    h += '<div class="fatura-atual"><span class="valor">' + brl(atual.total) + "</span>" +
+      (datas.length ? '<span class="sub">' + esc(datas.join(" · ")) + "</span>" : "") + "</div>";
+    var notas = [];
+    if (r.info && r.info.minimo) notas.push("mínimo " + brl(r.info.minimo));
+    if (r.info && r.info.saldo != null) notas.push("saldo informado pelo banco: " + brl(r.info.saldo));
+    if (atual.parcelas || atual.previsto) notas.push("inclui " + brl(atual.parcelas + atual.previsto) + " de parcelas/lançamentos ainda não fechados");
+    if (notas.length) h += '<p class="nota">' + esc(notas.join(" · ")) + "</p>";
+    if (r.estimado) h += '<p class="nota">Estimativa pelo mês das compras. Para acertar o ciclo, ponha os dias de fechamento e vencimento em <a href="#" data-ir="config">Configurar</a>.</p>';
+
+    // próximas faturas
+    var max = 0;
+    r.meses.forEach(function (m) { max = Math.max(max, m.total); });
+    h += "<h3>Próximas faturas <span class=\"mudo\" style=\"font-weight:400\">(o que já está comprado)</span></h3>";
+    h += '<div class="colunas baixas">';
+    r.meses.forEach(function (m, i) {
+      var d = (i === 0 ? "Fatura atual" : "Fatura de " + nomeMes(m.mes)) + ": " + brl(m.total);
+      if (m.lancado) d += "\nlançado: " + brl(m.lancado);
+      if (m.parcelas) d += "\nparcelas por vir: " + brl(m.parcelas);
+      if (m.previsto) d += "\nprevisto pelo banco: " + brl(m.previsto);
+      m.itens.slice().sort(function (a, b) { return b.valor - a.valor; }).slice(0, 5).forEach(function (it) {
+        d += "\n· " + it.descricao + " " + brl(it.valor);
+      });
+      h += '<div class="coluna' + (i === 0 ? " atual" : "") + '" data-dica="' + esc(d) + '">' +
+        (m.total > 0 ? '<div class="b-' + p + '" style="height:' + (max ? m.total / max * 100 : 0) + '%"></div>' : "") + "</div>";
+    });
+    h += '</div><div class="col-rotulos">';
+    r.meses.forEach(function (m, i) {
+      h += '<div class="' + (i === 0 ? "atual-rotulo" : "") + '">' + mesCurto(m.mes) + "<br>" + (m.total ? brlCurto(m.total) : "–") + "</div>";
+    });
+    h += "</div>";
+    h += '<p class="nota">Compras novas ainda não entram aqui: as próximas faturas mostram as parcelas já assumidas.</p>';
+
+    // parcelamentos
+    h += "<h3>Parcelamentos em andamento</h3>";
+    if (!r.parcelamentos.length) h += '<p class="sub" style="margin:0">Nenhuma compra parcelada em andamento.</p>';
+    else {
+      var falta = 0;
+      h += '<ul class="lista-simples lista-parc">';
+      r.parcelamentos.forEach(function (x) {
+        falta += x.falta;
+        h += '<li><span class="desc-curta" title="' + esc(x.descricao) + '">' + esc(x.descricao) +
+          ' <span class="parcela-n">' + x.k + "/" + x.n + "</span></span>" +
+          '<span class="num">' + brl(x.valor) + '<span class="mudo"> · falta ' + brl(x.falta) + " · até " + mesCurto(x.termina) + "</span></span></li>";
+      });
+      h += '</ul><p class="nota">Ainda a pagar em parcelas: <strong>' + brl(falta) + "</strong></p>";
+    }
+
+    // anteriores
+    if (r.anteriores.length) {
+      h += "<h3>Faturas anteriores</h3><ul class=\"lista-simples\">";
+      r.anteriores.forEach(function (x) {
+        h += "<li><span>" + nomeMes(x.mes) + (x.fonte === "compras" ? ' <span class="mudo">(soma das compras)</span>' : "") +
+          '</span><span class="num">' + brl(x.total) + "</span></li>";
+      });
+      h += "</ul>";
+    }
+    if (r.info && r.info.atualizadoEm)
+      h += '<p class="nota">Dados do banco de ' + esc(new Date(r.info.atualizadoEm).toLocaleString("pt-BR")) + ".</p>";
+    h += "</div>";
+  });
+  h += "</div>";
+  el.innerHTML = h;
+  ligarLinks(el);
+}
+
 function desenharImportar() {
   var el = $("#painel-importar");
   var h = '<div class="cartao"><h2>Importar extrato ou fatura do Nubank</h2>';
@@ -1663,10 +1993,14 @@ function desenharConfig() {
     h += '<div class="pessoa-conf"><div class="titulo">' + bolinha(p) + (p === "p1" ? "Pessoa 1" : "Pessoa 2") + "</div>" +
       '<label class="campo">Nome no app<input type="text" data-pessoa="' + p + '" data-k="nome" value="' + esc(estado.pessoas[p].nome) + '"></label>' +
       '<label class="campo">Nome completo como aparece no Pix<input type="text" data-pessoa="' + p + '" data-k="nomeBanco" placeholder="ex.: Maria Souza Lima" value="' + esc(estado.pessoas[p].nomeBanco) + '"></label>' +
+      '<div class="linha-form" style="margin:0">' +
+      '<label class="campo">Cartão: dia que fecha<input type="number" min="1" max="31" style="width:90px" data-pessoa="' + p + '" data-k="diaFechamento" value="' + esc(estado.pessoas[p].diaFechamento || "") + '"></label>' +
+      '<label class="campo">dia que vence<input type="number" min="1" max="31" style="width:90px" data-pessoa="' + p + '" data-k="diaVencimento" value="' + esc(estado.pessoas[p].diaVencimento || "") + '"></label></div>' +
       "</div>";
   });
   h += "</div>";
-  h += '<p class="sub">O nome do Pix serve para reconhecer as transferências entre vocês: elas não contam como gasto.</p>';
+  h += '<p class="sub">O nome do Pix serve para reconhecer as transferências entre vocês: elas não contam como gasto. ' +
+    "Os dias do cartão dizem em que fatura cai cada compra; com o Meu Pluggy conectado, valem os do banco.</p>";
   h += '<div class="linha-form"><label class="campo">Quanto das despesas do casal é de ' + esc(nome("p1")) +
     '<span><input type="number" id="c-div" min="0" max="100" step="1" value="' + Math.round(N.pct(estado, "p1") * 100) + '" style="width:80px"> %</span></label>' +
     '<span class="sub" id="c-div-outra">' + esc(nome("p2")) + " fica com " + Math.round(N.pct(estado, "p2") * 100) + "%</span></div>";

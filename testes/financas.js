@@ -188,6 +188,71 @@ ok(a1.regras.some((r) => r.termo === "netflix" && r.categoria === "lazer"), "reg
 const ordem = { b: 1, a: { d: [1, { y: 2, x: 1 }], c: null } };
 ok(N.canonico(ordem) === N.canonico({ a: { c: null, d: [1, { x: 1, y: 2 }] }, b: 1 }), "canonico ignora ordem das chaves");
 
+console.log("\n=== cartão: só com os CSV de fatura ===");
+const k = N.estadoPadrao();
+N.importar(k, "p1-cartao", N.lerArquivo(exemplo("cartao-pessoa1-2026-09.csv")).itens, "nubank-cartao");
+N.importar(k, "p1-cartao", N.lerArquivo(exemplo("cartao-pessoa1-2026-10.csv")).itens, "nubank-cartao");
+ok(JSON.stringify(N.infoParcela({ descricao: "Amazon Marketplace - Parcela 3/5" })) === '{"k":3,"n":5}', "parcela lida da descrição");
+ok(N.infoParcela({ descricao: "Parcela 7/5" }) === null && N.infoParcela({ descricao: "Netflix" }) === null, "não inventa parcela");
+ok(N.baseParcela("Amazon Marketplace - Parcela 2/5") === N.baseParcela("Amazon Marketplace - Parcela 3/5"), "parcelas da mesma compra se reconhecem");
+let rc = N.resumoCartao(k, "p1", "2026-10-09");
+ok(rc.estimado && rc.aberta === "2026-10", "sem dias nem banco: fatura pelo mês da compra (estimativa)", rc.aberta);
+const amazon = rc.parcelamentos.find((x) => /Amazon/.test(x.descricao));
+ok(amazon && amazon.k === 3 && amazon.n === 5 && perto(amazon.falta, 89.90 * 2) && amazon.termina === "2026-12",
+   "parcelamento: 3/5, faltam 2 de 89,90, termina em dezembro", JSON.stringify(amazon));
+const nov = rc.meses.find((m) => m.mes === "2026-11"), dez = rc.meses.find((m) => m.mes === "2026-12");
+ok(perto(nov.parcelas, 89.90) && perto(dez.parcelas, 89.90) && rc.meses.find((m) => m.mes === "2027-01").total === 0,
+   "próximas faturas: uma parcela em nov e uma em dez, nada em jan");
+const out = rc.meses[0];
+const outEsperado = 44.90 + 31.80 + 73.40 + 119.90 + 89.90 + 150.00 + 459.00;
+ok(perto(out.lancado, outEsperado), "fatura de outubro: compras de outubro, sem o 'pagamento recebido'", out.lancado + " x " + outEsperado.toFixed(2));
+ok(rc.anteriores.length && rc.anteriores[0].mes === "2026-09" && rc.anteriores[0].fonte === "compras", "faturas anteriores pelas compras");
+
+console.log("\n=== cartão: com dias de fechamento e vencimento ===");
+k.pessoas.p1.diaFechamento = 3; k.pessoas.p1.diaVencimento = 10;
+const cf = N.cartaoDe(k, "p1");
+ok(N.mesDaFatura(cf, "2026-10-02") === "2026-10" && N.mesDaFatura(cf, "2026-10-03") === "2026-11" && N.mesDaFatura(cf, "2026-10-08") === "2026-11",
+   "compra antes do fechamento: fatura do mês; no dia ou depois: a do mês seguinte");
+ok(N.resumoCartao(k, "p1", "2026-10-09").aberta === "2026-11", "fatura aberta em 9/10 é a que vence em novembro");
+const cv = { diaFechamento: 28, diaVencimento: 5 };
+ok(N.mesDaFatura(cv, "2026-10-10") === "2026-11" && N.mesDaFatura(cv, "2026-10-29") === "2026-12",
+   "vencimento no começo do mês: a fatura vence no mês seguinte ao fechamento");
+
+console.log("\n=== cartão: com os dados do banco (Pluggy) ===");
+const kb = N.estadoPadrao();
+const DADOS_CARTAO = { geradoEm: "2026-10-09T10:00:00Z", transacoes: [
+  { id: "a1", pessoa: "p2", tipo: "cartao", data: "2026-08-20", descricao: "Loja velha", valor: 300, billId: "b-set" },
+  { id: "a2", pessoa: "p2", tipo: "cartao", data: "2026-09-20", descricao: "Loja X - Parcela 1/3", valor: 50, parcela: 1, parcelas: 3, fatura: "2026-10" },
+  { id: "a3", pessoa: "p2", tipo: "cartao", data: "2026-10-01", descricao: "Mercado", valor: 120, fatura: "2026-10" },
+], cartoes: [{ conta: "acc-2", pessoa: "p2", nome: "Nubank Ultravioleta", bandeira: "MASTERCARD",
+  limite: 5000, disponivel: 3800, saldo: 1200, minimo: 180, fechamento: "2026-10-08", vencimento: "2026-10-15",
+  faturas: [{ id: "b-set", vencimento: "2026-09-15", total: 980.5, minimo: 147 }],
+  previstas: [{ descricao: "Loja X - Parcela 2/3", valor: 50, data: "2026-09-20", fatura: "2026-11", parcela: 2, parcelas: 3 }],
+  atualizadoEm: "2026-10-09T10:00:00Z" }] };
+let ri = N.importarPluggy(kb, DADOS_CARTAO);
+ok(ri.novas === 3 && ri.cartoes === 1, "transações e dados do cartão chegam", JSON.stringify(ri));
+rc = N.resumoCartao(kb, "p2", "2026-10-09");
+ok(rc.info && rc.info.limite === 5000 && rc.info.disponivel === 3800 && rc.info.minimo === 180 && !rc.estimado, "limite, disponível e mínimo do banco");
+ok(rc.aberta === "2026-10", "fatura aberta é a do vencimento informado pelo banco");
+ok(perto(rc.meses[0].lancado, 170), "fatura de outubro pela previsão do banco", rc.meses[0].lancado);
+const nov2 = rc.meses[1], dez2 = rc.meses[2];
+ok(perto(nov2.previsto, 50) && nov2.parcelas === 0, "parcela 2 prevista pelo banco não é contada de novo", JSON.stringify([nov2.previsto, nov2.parcelas]));
+ok(perto(dez2.parcelas, 50), "parcela 3 projetada para dezembro");
+ok(rc.anteriores.length === 1 && rc.anteriores[0].total === 980.5 && rc.anteriores[0].fonte === "banco", "faturas fechadas do banco");
+ok(!rc.meses.some((m) => m.itens.some((i) => i.descricao === "Loja velha")), "compra de fatura já fechada fica na fatura dela (setembro)");
+
+const velha = { geradoEm: "x", transacoes: [], cartoes: [Object.assign({}, DADOS_CARTAO.cartoes[0], { limite: 1, atualizadoEm: "2026-10-01T00:00:00Z" })] };
+ok(N.importarPluggy(kb, velha).cartoes === 0 && kb.cartoes["acc-2"].limite === 5000, "dado de cartão mais velho não substitui o novo");
+const semCampos = N.estadoPadrao();
+N.importarPluggy(semCampos, { transacoes: DADOS_CARTAO.transacoes.map((t) => ({ id: t.id, pessoa: t.pessoa, tipo: t.tipo, data: t.data, descricao: t.descricao, valor: t.valor })) });
+const rb = N.importarPluggy(semCampos, DADOS_CARTAO);
+ok(rb.completadas === 3 && semCampos.transacoes.find((t) => t.id === "pg-a2").fatura === "2026-10",
+   "transação já baixada antes ganha os dados do cartão", JSON.stringify(rb));
+const kc = N.estadoPadrao();
+N.mesclar(kc, kb);
+ok(kc.cartoes["acc-2"] && kc.cartoes["acc-2"].limite === 5000, "dados do cartão vão pelo cofre para o outro aparelho");
+ok(N.resumoCartao(N.estadoPadrao(), "p1", "2026-10-09").temDados === false, "sem nada de cartão: a tela sabe que está vazia");
+
 console.log("\n=== cofre cifrado ===");
 (async () => {
   const c1 = await N.derivarCofre("  minha-senha-do-casal ");
@@ -197,7 +262,10 @@ console.log("\n=== cofre cifrado ===");
   ok(c1.id !== c3.id && /^[0-9a-f]{64}$/.test(c1.id), "senha diferente, outro cofre");
   ok(!c1.chave.includes(c1.id.slice(0, 10)), "id e chave são coisas diferentes");
   const texto = await N.cifrar(c1.chave, a1);
-  ok(!/Ifood|Carrefour|Ana/.test(texto), "nada legível no que vai para o servidor");
+  // trechos longos do conteúdo real: num base64 aleatório, "Ana" aparece por
+  // acaso de vez em quando; "Carrefour Hiper" não
+  const legiveis = ["Carrefour Hiper", "Ifd*Ifood Restaurante", '"transacoes"', '"categorias"', "Padaria Pao Quente"];
+  ok(!legiveis.some((x) => texto.includes(x)), "nada legível no que vai para o servidor");
   const volta = await N.decifrar(c1.chave, texto);
   ok(N.canonico(volta) === N.canonico(a1), "decifra igual ao original");
   ok(texto.length < JSON.stringify(a1).length, "vai comprimido", texto.length + " < " + JSON.stringify(a1).length);

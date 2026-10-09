@@ -213,6 +213,11 @@ class Pluggy:
             raise Erro("O Pluggy não devolveu o connect token.")
         return token
 
+    def faturas(self, conta_id):
+        """Faturas fechadas do cartão (GET /bills)."""
+        r = self._pedir("GET", "/bills", consulta={"accountId": conta_id, "pageSize": 50})
+        return r.get("results") or []
+
     def item(self, item_id):
         return self._pedir("GET", "/items/" + item_id)
 
@@ -272,34 +277,104 @@ def cursor_seguinte(proximo):
 
 # ----------------------------------------------------------- transformação
 
-def converter(t, pessoa, tipo):
-    """Transação do Pluggy -> formato do app (valor positivo = gasto).
-
-    O sinal vem do campo type, não do amount: no Pluggy o sinal do amount
-    muda entre conta e cartão, e o type (DEBIT = saiu, CREDIT = entrou) não."""
-    if (t.get("status") or "POSTED").upper() == "PENDING":
-        return None  # compra ainda não fechada: o id pode mudar quando fechar
+def valor_de(t):
+    """Valor no sinal do app (positivo = gasto). O sinal vem do campo type, não
+    do amount: no Pluggy o sinal do amount muda entre conta e cartão, e o type
+    (DEBIT = saiu, CREDIT = entrou) não."""
     valor = t.get("amountInAccountCurrency")
     if valor is None:
         valor = t.get("amount")
     if valor is None:
         return None
     valor = abs(float(valor))
-    if (t.get("type") or "").upper() == "CREDIT":
-        valor = -valor
-    data = str(t.get("date") or "")[:10]
-    if len(data) != 10:
+    return round(-valor if (t.get("type") or "").upper() == "CREDIT" else valor, 2)
+
+
+def data10(v):
+    v = str(v or "")[:10]
+    return v if re.match(r"^\d{4}-\d{2}-\d{2}$", v) else None
+
+
+def campos_cartao(t):
+    """Do creditCardMetadata: parcela 3 de 10, a fatura prevista (AAAA-MM) e o
+    id da fatura no banco."""
+    m = t.get("creditCardMetadata") or {}
+    x = {}
+    try:
+        k, n = int(m.get("installmentNumber") or 0), int(m.get("totalInstallments") or 0)
+        if n > 1 and 1 <= k <= n:
+            x["parcela"], x["parcelas"] = k, n
+    except (TypeError, ValueError):
+        pass
+    prev = str(m.get("billForecastDate") or "")[:7]
+    if re.match(r"^\d{4}-\d{2}$", prev):
+        x["fatura"] = prev
+    if m.get("billId"):
+        x["billId"] = str(m["billId"])
+    return x
+
+
+def converter(t, pessoa, tipo):
+    """Transação do Pluggy -> formato do app."""
+    if (t.get("status") or "POSTED").upper() == "PENDING":
+        return None  # compra ainda não fechada: o id pode mudar quando fechar
+    valor = valor_de(t)
+    data = data10(t.get("date"))
+    if valor is None or not data:
         return None
-    desc = t.get("description") or t.get("descriptionRaw") or "(sem descrição)"
-    return {
+    x = {
         "id": t["id"],
         "pessoa": pessoa,
         "tipo": tipo,
         "data": data,
-        "descricao": desc,
-        "valor": round(valor, 2),
+        "descricao": t.get("description") or t.get("descriptionRaw") or "(sem descrição)",
+        "valor": valor,
         "categoriaPluggy": t.get("category") or "",
     }
+    if tipo == "cartao":
+        x.update(campos_cartao(t))
+    return x
+
+
+def prevista(t):
+    """Compra do cartão ainda pendente (ou parcela futura): não vira transação
+    - o id muda quando ela fecha -, mas entra na previsão das faturas."""
+    valor = valor_de(t)
+    if valor is None:
+        return None
+    x = {"descricao": t.get("description") or "(sem descrição)", "valor": valor, "data": data10(t.get("date"))}
+    x.update(campos_cartao(t))
+    return x
+
+
+def dados_do_cartao(api, c, pessoa, pendentes):
+    cd = c.get("creditData") or {}
+    faturas = []
+    try:
+        for b in api.faturas(c["id"]):
+            faturas.append({"id": b.get("id"), "vencimento": data10(b.get("dueDate")),
+                            "fechamento": data10(b.get("billClosingDate")),
+                            "total": b.get("totalAmount"), "minimo": b.get("minimumPaymentAmount")})
+    except Erro as e:
+        print("           (faturas fechadas não vieram: %s)" % str(e)[:80])
+    faturas.sort(key=lambda b: b["vencimento"] or "", reverse=True)
+    return {
+        "conta": c["id"], "pessoa": pessoa,
+        "nome": c.get("marketingName") or c.get("name") or "Cartão",
+        "bandeira": cd.get("brand") or "",
+        "limite": cd.get("creditLimit"), "disponivel": cd.get("availableCreditLimit"),
+        "saldo": c.get("balance"), "minimo": cd.get("minimumPayment"),
+        "fechamento": data10(cd.get("balanceCloseDate")), "vencimento": data10(cd.get("balanceDueDate")),
+        "faturas": faturas[:24],
+        "previstas": [x for x in (prevista(t) for t in pendentes) if x],
+        "atualizadoEm": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+    }
+
+
+def reais(v):
+    if v is None:
+        return "?"
+    return "R$ " + ("%.2f" % float(v)).replace(".", ",")
 
 
 def ler_saida():
@@ -512,14 +587,16 @@ def principal(argv=None):
     hoje = dt.date.today()
     if a.dias:
         desde = hoje - dt.timedelta(days=a.dias)
-    elif por_id:
-        # volta 10 dias além da última transação: o banco ainda ajusta as recentes
-        ultima = max(t["data"] for t in por_id.values())
+    elif any(t["data"] <= hoje.isoformat() for t in por_id.values()):
+        # volta 10 dias além da última transação: o banco ainda ajusta as
+        # recentes. Só conta até hoje - parcela futura do cartão não vale.
+        ultima = max(t["data"] for t in por_id.values() if t["data"] <= hoje.isoformat())
         desde = dt.date.fromisoformat(ultima) - dt.timedelta(days=10)
     else:
         desde = hoje - dt.timedelta(days=365)
 
     novas = 0
+    cartoes = {c["conta"]: c for c in anterior.get("cartoes", []) if c.get("conta")}
     for item_id, (pessoa, cred) in cfg["itens"].items():
         nome = "Pessoa 1" if pessoa == "p1" else "Pessoa 2"
         if cred not in apis:
@@ -544,11 +621,20 @@ def principal(argv=None):
         for c in api.contas(item_id):
             tipo = "cartao" if (c.get("type") or "").upper() == "CREDIT" else "conta"
             print("    %-6s %s" % ("cartão" if tipo == "cartao" else "conta", c.get("name") or c.get("number") or c.get("id")))
+            if tipo == "cartao":
+                cd = c.get("creditData") or {}
+                print("           limite %s, disponível %s, fatura vence %s"
+                      % (reais(cd.get("creditLimit")), reais(cd.get("availableCreditLimit")),
+                         data10(cd.get("balanceDueDate")) or "?"))
             if a.testar:
                 continue
-            lista = api.transacoes(c["id"], desde.isoformat(), hoje.isoformat())
-            n = 0
+            # no cartão, até um ano para a frente: parcelas futuras que o banco já informa
+            ate = hoje + dt.timedelta(days=400) if tipo == "cartao" else hoje
+            lista = api.transacoes(c["id"], desde.isoformat(), ate.isoformat())
+            n, pendentes = 0, []
             for t in lista:
+                if tipo == "cartao" and (t.get("status") or "").upper() == "PENDING":
+                    pendentes.append(t)
                 x = converter(t, pessoa, tipo)
                 if not x:
                     continue
@@ -557,6 +643,10 @@ def principal(argv=None):
                 por_id[x["id"]] = x
             novas += n
             print("           %d transações no período, %d novas" % (len(lista), n))
+            if tipo == "cartao":
+                cartoes[c["id"]] = dados_do_cartao(api, c, pessoa, pendentes)
+                print("           %d faturas fechadas, %d lançamentos previstos"
+                      % (len(cartoes[c["id"]]["faturas"]), len(cartoes[c["id"]]["previstas"])))
 
     if a.testar:
         print("\nCredenciais e conexões OK.")
@@ -565,9 +655,11 @@ def principal(argv=None):
     gravar_saida({
         "geradoEm": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "transacoes": todas,
+        "cartoes": list(cartoes.values()),
     })
-    print("\n%d novas. %s tem %d transações. Abra o financas.html."
-          % (novas, os.path.basename(SAIDA), len(todas)))
+    print("\n%d novas. %s tem %d transações%s."
+          % (novas, os.path.basename(SAIDA), len(todas),
+             " e os dados de %d cartão(ões)" % len(cartoes) if cartoes else ""))
     return 0
 
 

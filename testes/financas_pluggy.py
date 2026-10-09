@@ -31,14 +31,18 @@ def ok(c, nome, extra=""):
 
 
 CONTAS = {
-    "aaaaaaaa-0000-4000-8000-00000000000a": [{"id": "ca", "type": "CREDIT", "name": "Nubank cartão"},
+    "aaaaaaaa-0000-4000-8000-00000000000a": [{"id": "ca", "type": "CREDIT", "name": "Nubank cartão", "balance": 1234.5,
+                "creditData": {"brand": "MASTERCARD", "creditLimit": 5000, "availableCreditLimit": 3765.5,
+                               "minimumPayment": 185.2, "balanceCloseDate": "2026-10-08T00:00:00.000Z",
+                               "balanceDueDate": "2026-10-15T00:00:00.000Z"}},
                {"id": "ba", "type": "BANK", "name": "Nubank conta"}],
     "bbbbbbbb-0000-4000-8000-00000000000b": [{"id": "cb", "type": "CREDIT", "name": "Nubank cartão"}],
 }
 TRANS = {
     # cartão: 3 páginas de 1 para testar a paginação
     "ca": [
-        {"id": "t1", "date": "2026-10-01T12:00:00.000Z", "description": "IFOOD", "amount": 50.0, "type": "DEBIT", "category": "Food delivery"},
+        {"id": "t1", "date": "2026-10-01T12:00:00.000Z", "description": "IFOOD", "amount": 50.0, "type": "DEBIT", "category": "Food delivery",
+         "creditCardMetadata": {"installmentNumber": 2, "totalInstallments": 5, "billForecastDate": "2026-10", "billId": "b9"}},
         {"id": "t2", "date": "2026-10-02T12:00:00.000Z", "description": "Pagamento recebido", "amount": -900.0, "type": "CREDIT"},
         {"id": "t3", "date": "2026-10-03T12:00:00.000Z", "description": "Compra pendente", "amount": 10.0, "type": "DEBIT", "status": "PENDING"},
     ],
@@ -97,6 +101,12 @@ class Falso(BaseHTTPRequestHandler):
             return self._json(200, {"id": u.path[7:], "status": "UPDATED", "connector": {"name": "Nubank"}})
         if u.path == "/accounts":
             return self._json(200, {"results": CONTAS.get(q["itemId"], [])})
+        if u.path == "/bills":
+            if q["accountId"] == "cb":
+                return self._json(400, {"message": "bills not available"})
+            return self._json(200, {"results": [{"id": "b9", "dueDate": "2026-09-15T00:00:00.000Z",
+                                                 "billClosingDate": "2026-09-08T00:00:00.000Z",
+                                                 "totalAmount": 980.5, "minimumPaymentAmount": 147}]})
         if u.path == "/transactions":   # como o Pluggy de verdade hoje
             return self._json(410, {"message": "This endpoint is deprecated. Use GET /v2/transactions "
                                                "with cursor pagination instead.", "code": 410})
@@ -208,6 +218,23 @@ ok(por["t5"]["valor"] == 1800, "saída da conta = gasto positivo (amount negativ
 ok(por["t6"]["valor"] == 55.3 and por["t6"]["pessoa"] == "p2", "compra em dólar usa o valor em reais")
 ok(por["t1"]["data"] == "2026-10-01" and por["t1"]["categoriaPluggy"] == "Food delivery", "data e categoria")
 
+print("\n=== cartão de crédito ===")
+ok(por["t1"].get("parcela") == 2 and por["t1"].get("parcelas") == 5 and por["t1"].get("fatura") == "2026-10"
+   and por["t1"].get("billId") == "b9", "parcela e fatura da compra", {k: por["t1"].get(k) for k in ("parcela", "parcelas", "fatura", "billId")})
+ok("parcela" not in por["t4"], "conta corrente não ganha campos de cartão")
+cart = {c["conta"]: c for c in dados.get("cartoes", [])}
+ca = cart.get("ca", {})
+ok(ca.get("pessoa") == "p1" and ca.get("limite") == 5000 and ca.get("disponivel") == 3765.5 and ca.get("minimo") == 185.2,
+   "limite, disponível e mínimo", {k: ca.get(k) for k in ("limite", "disponivel", "minimo")})
+ok(ca.get("fechamento") == "2026-10-08" and ca.get("vencimento") == "2026-10-15" and ca.get("saldo") == 1234.5, "fechamento e vencimento")
+ok(len(ca.get("faturas", [])) == 1 and ca["faturas"][0]["vencimento"] == "2026-09-15" and ca["faturas"][0]["total"] == 980.5,
+   "faturas fechadas", ca.get("faturas"))
+ok([x["descricao"] for x in ca.get("previstas", [])] == ["Compra pendente"] and ca["previstas"][0]["valor"] == 10,
+   "compra pendente vira previsão (e não transação)", ca.get("previstas"))
+ok("cb" in cart and cart["cb"]["faturas"] == [], "cartão sem /bills no banco: segue sem as faturas fechadas")
+datas_ate = {q["accountId"]: q["dateTo"] for p, q in pedidos if p == "/v2/transactions"}
+ok(datas_ate.get("ca", "") > datas_ate.get("ba", "9"), "no cartão busca também o que já está lançado para o futuro", datas_ate)
+
 print("\n=== cursor do /v2/transactions ===")
 for entrada, esperado in (
         ("/v2/transactions?accountId=x&after=a%2Bb%2Fc%3D%3D", "a+b/c=="),
@@ -223,13 +250,14 @@ ok(not any(p == "/transactions" for p, q in pedidos), "não usa mais o /transact
 
 print("\n=== rodar de novo ===")
 TRANS["ba"].append({"id": "t7", "date": "2026-10-08T00:00:00.000Z", "description": "Padaria", "amount": -12.0, "type": "DEBIT"})
-TRANS["cb"] = []          # o período novo não traz mais a t6...
+TRANS["cb"] = [            # o período novo não traz mais a t6, e traz uma parcela futura
+    {"id": "f1", "date": "2027-03-10T00:00:00.000Z", "description": "Loja - Parcela 5/5", "amount": 20.0, "type": "DEBIT"}]
 pedidos.clear()
 cod, txt = rodar()
 dados = F.ler_saida()
 ids = [t["id"] for t in dados["transacoes"]]
-ok(len(ids) == len(set(ids)) == 6, "não duplica e não perde o que já tinha", ids)
-ok("1 novas" in txt, "conta só as novas", txt.strip().splitlines()[-1])
+ok(len(ids) == len(set(ids)) == 7 and "f1" in ids, "não duplica e não perde o que já tinha (e guarda a parcela futura)", ids)
+ok("2 novas" in txt, "conta só as novas", txt.strip().splitlines()[-1])
 desde = [q["dateFrom"] for p, q in pedidos if p == "/v2/transactions"][0]
 ok(desde == "2026-09-26", "incremental: 10 dias antes da última transação", desde)
 

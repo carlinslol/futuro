@@ -91,7 +91,9 @@ o jeito de usar com um casal:
 Passo a passo — **cada um faz o seu**:
 
 1. Crie a conta em <https://meu.pluggy.ai> e conecte o seu Nubank (é o fluxo
-   de Open Finance: o app do Nubank abre e pede para autorizar).
+   de Open Finance: o app do Nubank abre e pede para autorizar). **Inclua o
+   cartão de crédito** na autorização: sem ele, o `--testar` mostra só a conta e
+   a aba Cartão fica só com o que vier dos CSV de fatura.
 2. Crie a conta em <https://dashboard.pluggy.ai>. Ela já vem com uma
    aplicação; anote o **Client ID** e o **Client Secret** dela. (O dashboard
    avisa de um teste grátis de 15 dias: é da API paga, pode ignorar.)
@@ -154,6 +156,19 @@ o segredo do Pluggy, o outro o extrato de vocês.
 - o **custo real** de cada um: o que é pessoal mais a sua parte das despesas do casal;
 - gastos por categoria, com **orçamento** (passou do limite, fica vermelho);
 - os últimos 6 meses e os maiores gastos.
+
+**Cartão**, de cada um:
+- **limite** usado e disponível, **fatura atual** com fechamento, vencimento e
+  mínimo (com o Meu Pluggy; sem ele, a fatura é estimada pelas compras);
+- **próximas faturas**: o que já está comprado para os próximos meses —
+  parcelas que ainda vão cair e lançamentos que o banco já informa;
+- **parcelamentos em andamento**: parcela atual, quanto falta e até quando;
+- **faturas anteriores**.
+
+As faturas têm o nome do mês do vencimento. Sem o Meu Pluggy, ponha em
+Configurar o dia em que o cartão fecha e o dia em que vence — é o que diz em
+que fatura cai cada compra (compra no dia do fechamento ou depois vai para a
+fatura seguinte).
 
 **Transações**: troque categoria e divisão (pessoal ou do casal) de qualquer
 uma. Ao mudar a categoria, o app oferece criar uma regra para as próximas.
