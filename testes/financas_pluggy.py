@@ -141,6 +141,22 @@ with open(F.CONFIG, "w", encoding="utf-8") as f:
             "pessoa1 = item-a\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\n"
             "pessoa2 = item-b\npessoa2_client_id = id-b\npessoa2_client_secret = segredo-b\n")
 
+print("\n=== config escrito do jeito que der ===")
+texto = ('pessoa1 = "item-a"\npessoa1_client_id = "id-a"\npessoa1_client_secret = <segredo-a>\n'
+         "pessoa2 = 'item-b'\npessoa2_client_id = id-b\npessoa2_client_secret =   segredo-b   \n")
+for nome, dados in (("aspas e <> em volta", texto.encode("utf-8")),
+                    ("Bloco de Notas 'Unicode' (UTF-16)", texto.encode("utf-16")),
+                    ("UTF-8 com BOM", b"\xef\xbb\xbf" + texto.encode("utf-8")),
+                    ("ANSI com acento no comentário", ("# configuração\n" + texto).encode("cp1252"))):
+    with open(F.CONFIG, "wb") as f:
+        f.write(dados)
+    cod, txt = rodar("--testar")
+    ok(cod == 0 and "OK" in txt, "config lido: " + nome, txt.strip().splitlines()[-1][:50])
+with open(F.CONFIG, "w", encoding="utf-8") as f:
+    f.write("# comentário\n"
+            "pessoa1 = item-a\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\n"
+            "pessoa2 = item-b\npessoa2_client_id = id-b\npessoa2_client_secret = segredo-b\n")
+
 print("\n=== --testar e --atualizar ===")
 cod, txt = rodar("--testar")
 ok(cod == 0 and "OK" in txt and not os.path.exists(F.SAIDA), "--testar não grava nada")

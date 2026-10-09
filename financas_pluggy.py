@@ -72,6 +72,28 @@ class Erro(Exception):
 
 # ------------------------------------------------------------------ config
 
+def ler_texto(caminho):
+    """Lê o config no encoding em que o editor tiver salvo. O Bloco de Notas
+    do Windows grava "Unicode" (UTF-16) ou ANSI se a pessoa escolher."""
+    with open(caminho, "rb") as f:
+        bruto = f.read()
+    if bruto.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return bruto.decode("utf-16")
+    try:
+        return bruto.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return bruto.decode("cp1252")
+
+
+def limpar_valor(v):
+    """'  "abc"  ' -> 'abc'. Aspas e <> em volta do valor são o erro mais
+    comum ao colar: viravam parte da credencial e o Pluggy recusava."""
+    v = v.strip()
+    while len(v) >= 2 and (v[0], v[-1]) in (('"', '"'), ("'", "'"), ("<", ">")):
+        v = v[1:-1].strip()
+    return v
+
+
 def ler_config():
     if not os.path.exists(CONFIG):
         with open(CONFIG, "w", encoding="utf-8") as f:
@@ -79,13 +101,12 @@ def ler_config():
         raise Erro("Criei o %s. Preencha as credenciais do Pluggy e os itemIds "
                    "e rode de novo." % os.path.basename(CONFIG))
     cfg = {}
-    with open(CONFIG, encoding="utf-8-sig") as f:
-        for linha in f:
-            linha = linha.strip()
-            if not linha or linha.startswith("#") or "=" not in linha:
-                continue
-            k, v = linha.split("=", 1)
-            cfg[k.strip().lower()] = v.strip()
+    for linha in ler_texto(CONFIG).splitlines():
+        linha = linha.strip()
+        if not linha or linha.startswith("#") or "=" not in linha:
+            continue
+        k, v = linha.split("=", 1)
+        cfg[k.strip().lower()] = limpar_valor(v)
     geral = (os.environ.get("PLUGGY_CLIENT_ID") or cfg.get("client_id", ""),
              os.environ.get("PLUGGY_CLIENT_SECRET") or cfg.get("client_secret", ""))
     itens = {}   # itemId -> (pessoa, (client_id, client_secret))
