@@ -226,15 +226,43 @@ class Pluggy:
         return self._pedir("GET", "/accounts", consulta={"itemId": item_id}).get("results", [])
 
     def transacoes(self, conta_id, desde, ate):
-        pagina, todas = 1, []
+        """GET /v2/transactions, página a página pelo cursor. (O /transactions
+        por página foi desativado pelo Pluggy: responde 410.)"""
+        todas, after, vistos = [], None, set()
         while True:
-            r = self._pedir("GET", "/transactions", consulta={
-                "accountId": conta_id, "from": desde, "to": ate,
-                "pageSize": 500, "page": pagina})
-            todas.extend(r.get("results", []))
-            if pagina >= int(r.get("totalPages") or 1):
+            consulta = {"accountId": conta_id, "dateFrom": desde, "dateTo": ate}
+            if after:
+                consulta["after"] = after
+            r = self._pedir("GET", "/v2/transactions", consulta=consulta)
+            todas.extend(r.get("results") or [])
+            after = cursor_seguinte(r.get("next"))
+            if not after or after in vistos:
                 return todas
-            pagina += 1
+            vistos.add(after)
+
+
+def cursor_seguinte(proximo):
+    """O cursor da próxima página, a partir do campo "next" do /v2/transactions.
+
+    O "next" vem como link ("/v2/transactions?accountId=...&after=CURSOR"),
+    às vezes só a parte depois do "?", e há relato de vir o cursor puro. O
+    cursor é base64 e pode ter "+", "/" e "=": aqui ele é tirado SEM tratar
+    "+" como espaço (o erro que já quebrou o SDK oficial do Pluggy), e na
+    próxima chamada o urlencode manda o "+" como %2B."""
+    if not proximo:
+        return None
+    proximo = str(proximo)
+    consulta = urllib.parse.urlsplit(proximo).query if "?" in proximo else ""
+    if not consulta and "=" in proximo and "after" in proximo.split("=", 1)[0]:
+        consulta = proximo
+    if consulta:
+        for parte in consulta.split("&"):
+            if "=" in parte:
+                k, v = parte.split("=", 1)
+                if k == "after":
+                    return urllib.parse.unquote(v) or None
+        return None
+    return proximo   # o cursor puro
 
 
 # ----------------------------------------------------------- transformação

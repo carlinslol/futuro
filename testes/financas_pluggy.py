@@ -14,6 +14,7 @@ import sys
 import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import urllib.parse
 from urllib.parse import urlparse, parse_qs
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -96,12 +97,30 @@ class Falso(BaseHTTPRequestHandler):
             return self._json(200, {"id": u.path[7:], "status": "UPDATED", "connector": {"name": "Nubank"}})
         if u.path == "/accounts":
             return self._json(200, {"results": CONTAS.get(q["itemId"], [])})
-        if u.path == "/transactions":
+        if u.path == "/transactions":   # como o Pluggy de verdade hoje
+            return self._json(410, {"message": "This endpoint is deprecated. Use GET /v2/transactions "
+                                               "with cursor pagination instead.", "code": 410})
+        if u.path == "/v2/transactions":
             lista = TRANS[q["accountId"]]
             if q["accountId"] == "ca":
-                p = int(q.get("page", 1))
-                return self._json(200, {"total": 3, "totalPages": 3, "page": p, "results": lista[p - 1:p]})
-            return self._json(200, {"total": len(lista), "totalPages": 1, "page": 1, "results": lista})
+                # uma por página, e o "next" de cada página num formato diferente:
+                # link completo, só a query, e os cursores com + / = (base64)
+                cursores = [None, "pag+2/aa==", "pag+3/bb=="]
+                p = cursores.index(q.get("after")) if q.get("after") in cursores else -1
+                if p < 0:
+                    return self._json(400, {"message": "cursor inválido: %r" % q.get("after")})
+                prox = None
+                if p == 0:
+                    prox = "/v2/transactions?accountId=ca&after=" + urllib.parse.quote(cursores[1], safe="")
+                elif p == 1:
+                    prox = "?accountId=ca&after=" + urllib.parse.quote(cursores[2], safe="")
+                return self._json(200, {"results": lista[p:p + 1], "next": prox})
+            if q["accountId"] == "ba" and len(lista) > 1:
+                # o cursor puro, sem link nenhum
+                if q.get("after") == "cru+1/=":
+                    return self._json(200, {"results": lista[1:], "next": None})
+                return self._json(200, {"results": lista[:1], "next": "cru+1/="})
+            return self._json(200, {"results": lista, "next": None})
         self._json(404, {})
 
 
@@ -189,6 +208,19 @@ ok(por["t5"]["valor"] == 1800, "saída da conta = gasto positivo (amount negativ
 ok(por["t6"]["valor"] == 55.3 and por["t6"]["pessoa"] == "p2", "compra em dólar usa o valor em reais")
 ok(por["t1"]["data"] == "2026-10-01" and por["t1"]["categoriaPluggy"] == "Food delivery", "data e categoria")
 
+print("\n=== cursor do /v2/transactions ===")
+for entrada, esperado in (
+        ("/v2/transactions?accountId=x&after=a%2Bb%2Fc%3D%3D", "a+b/c=="),
+        ("https://api.pluggy.ai/v2/transactions?after=a+b/c==&accountId=x", "a+b/c=="),
+        ("?accountId=x&after=abc", "abc"),
+        ("after=abc&accountId=x", "abc"),
+        ("abc+/=", "abc+/="),
+        (None, None), ("", None), ("/v2/transactions?accountId=x", None)):
+    ok(F.cursor_seguinte(entrada) == esperado, "next %r -> %r" % (entrada, esperado), F.cursor_seguinte(entrada))
+v2 = [q for p, q in pedidos if p == "/v2/transactions"]
+ok(v2 and all("dateFrom" in q and "dateTo" in q for q in v2), "pede com dateFrom/dateTo")
+ok(not any(p == "/transactions" for p, q in pedidos), "não usa mais o /transactions antigo (410)")
+
 print("\n=== rodar de novo ===")
 TRANS["ba"].append({"id": "t7", "date": "2026-10-08T00:00:00.000Z", "description": "Padaria", "amount": -12.0, "type": "DEBIT"})
 TRANS["cb"] = []          # o período novo não traz mais a t6...
@@ -198,7 +230,7 @@ dados = F.ler_saida()
 ids = [t["id"] for t in dados["transacoes"]]
 ok(len(ids) == len(set(ids)) == 6, "não duplica e não perde o que já tinha", ids)
 ok("1 novas" in txt, "conta só as novas", txt.strip().splitlines()[-1])
-desde = [q["from"] for p, q in pedidos if p == "/transactions"][0]
+desde = [q["dateFrom"] for p, q in pedidos if p == "/v2/transactions"][0]
 ok(desde == "2026-09-26", "incremental: 10 dias antes da última transação", desde)
 
 print("\n=== só uma pessoa neste computador ===")
