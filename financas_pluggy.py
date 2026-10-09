@@ -75,6 +75,11 @@ pessoa2_client_secret =
 # linhas e deixe as de cada pessoa em branco.
 client_id =
 client_secret =
+
+# Cofre do casal: o sincronizar.bat sobe as transações direto para o site.
+# A senha é a MESMA que vocês usam no celular (o script nunca cria cofre).
+cofre_servidor = https://financas-casal.contatocarlinslol.workers.dev
+cofre_senha =
 """
 
 

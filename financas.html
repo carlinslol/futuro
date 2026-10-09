@@ -180,7 +180,6 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
   max-width: 260px; white-space: pre-line;
 }
 
-.acerto { font-size: 18px; font-weight: 600; margin: 4px 0 8px; }
 .lista-simples { list-style: none; margin: 0; padding: 0; }
 .lista-simples li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--linha); font-size: 14px; }
 .lista-simples li:last-child { border-bottom: 0; }
@@ -892,49 +891,6 @@ function gerarSenha() {
 
 /* ---------------------------------------------------------------- contas */
 
-/* Quanto uma pessoa deve à outra pelas despesas do casal, já descontadas as
-   transferências entre vocês. mes = "AAAA-MM" ou null para tudo.
-   Resultado: saldo > 0 -> p2 deve a p1; saldo < 0 -> p1 deve a p2. */
-function acerto(e, mes) {
-  var noPeriodo = e.transacoes.filter(function (t) { return !mes || mesDe(t.data) === mes; });
-  var pagoPor = { p1: 0, p2: 0 };
-  var saldo = 0;
-  noPeriodo.forEach(function (t) {
-    if (!ehGasto(t) || t.divisao !== "casal") return;
-    var p = pessoaDaConta(t.conta);
-    pagoPor[p] += t.valor;
-    var parteDaOutra = t.valor * pct(e, outra(p));
-    saldo += p === "p1" ? parteDaOutra : -parteDaOutra;
-  });
-
-  /* Transferências: conta o lado que SAIU (valor > 0). O lado que ENTROU só
-     conta se a saída correspondente não estiver importada (mesmo valor, até
-     3 dias de diferença) - senão o mesmo Pix seria contado duas vezes. */
-  var entre = noPeriodo.filter(function (t) { return t.categoria === "entre"; });
-  var saidas = entre.filter(function (t) { return t.valor > 0; });
-  var transf = { p1: 0, p2: 0 };    // quanto cada um mandou para o outro
-  var usadas = {};
-  saidas.forEach(function (t) { transf[pessoaDaConta(t.conta)] += t.valor; });
-  entre.filter(function (t) { return t.valor < 0; }).forEach(function (t) {
-    var recebeu = pessoaDaConta(t.conta), mandou = outra(recebeu);
-    var par = saidas.filter(function (s) {
-      return !usadas[s.id] && pessoaDaConta(s.conta) === mandou &&
-        Math.abs(s.valor + t.valor) < 0.005 &&
-        Math.abs(new Date(s.data) - new Date(t.data)) <= 3 * 86400000;
-    })[0];
-    if (par) usadas[par.id] = true;
-    else transf[mandou] += -t.valor;
-  });
-  saldo += transf.p1 - transf.p2;
-
-  return {
-    saldo: arred(saldo),
-    pagoPor: { p1: arred(pagoPor.p1), p2: arred(pagoPor.p2) },
-    totalCasal: arred(pagoPor.p1 + pagoPor.p2),
-    transferencias: { p1: arred(transf.p1), p2: arred(transf.p2) }
-  };
-}
-
 function resumoMes(e, mes) {
   var doMes = e.transacoes.filter(function (t) { return mesDe(t.data) === mes; });
   var gastos = doMes.filter(ehGasto);
@@ -984,7 +940,6 @@ function resumoMes(e, mes) {
   ["pagou", "custo", "pessoal", "entradas"].forEach(function (k) {
     r[k].p1 = arred(r[k].p1); r[k].p2 = arred(r[k].p2);
   });
-  r.acerto = acerto(e, mes);
   return r;
 }
 
@@ -1040,7 +995,7 @@ var Nucleo = {
   apagar: apagar, canonico: canonico, derivarCofre: derivarCofre, cifrar: cifrar, decifrar: decifrar,
   gerarSenha: gerarSenha, limparSenha: limparSenha,
   pessoaDaConta: pessoaDaConta, tipoDaConta: tipoDaConta, outra: outra, mesDe: mesDe, categoria: categoria,
-  ehGasto: ehGasto, pct: pct, acerto: acerto, resumoMes: resumoMes, somarMes: somarMes,
+  ehGasto: ehGasto, pct: pct, resumoMes: resumoMes, somarMes: somarMes,
   serieMeses: serieMeses, sugerirTermo: sugerirTermo, descricaoCurta: descricaoCurta, arred: arred
 };
 if (typeof module !== "undefined" && module.exports) module.exports = Nucleo;
@@ -1331,7 +1286,6 @@ function desenharResumo() {
   var r = N.resumoMes(estado, mesAtual);
   var ant = N.resumoMes(estado, N.somarMes(mesAtual, -1));
   var serie = N.serieMeses(estado, mesAtual, 6);
-  var acTudo = N.acerto(estado, null);
 
   var delta = "";
   if (ant.total > 0) {
@@ -1383,20 +1337,8 @@ function desenharResumo() {
   });
   h += "</div>";
 
-  /* Coluna da direita: acerto + meses */
+  /* Coluna da direita: meses + maiores gastos */
   h += "<div>";
-  h += '<div class="cartao"><h2>Acerto entre vocês</h2>';
-  h += '<div class="acerto">' + fraseAcerto(acTudo.saldo) + "</div>";
-  h += '<p class="sub" style="margin:0 0 8px">Somando todas as despesas do casal importadas, já descontados os Pix entre vocês.</p>';
-  h += '<ul class="lista-simples">';
-  h += "<li><span>Neste mês: despesas do casal pagas por " + esc(nome("p1")) + '</span><span class="num">' + brl(r.acerto.pagoPor.p1) + "</span></li>";
-  h += "<li><span>Neste mês: despesas do casal pagas por " + esc(nome("p2")) + '</span><span class="num">' + brl(r.acerto.pagoPor.p2) + "</span></li>";
-  if (r.acerto.transferencias.p1 || r.acerto.transferencias.p2) {
-    h += "<li><span>Neste mês: " + esc(nome("p1")) + " mandou para " + esc(nome("p2")) + '</span><span class="num">' + brl(r.acerto.transferencias.p1) + "</span></li>";
-    h += "<li><span>Neste mês: " + esc(nome("p2")) + " mandou para " + esc(nome("p1")) + '</span><span class="num">' + brl(r.acerto.transferencias.p2) + "</span></li>";
-  }
-  h += "<li><span>Só este mês</span><span class=\"num\">" + fraseAcerto(r.acerto.saldo, true) + "</span></li>";
-  h += "</ul></div>";
 
   /* Últimos 6 meses */
   var maxM = 0;
@@ -1437,11 +1379,6 @@ function kpi(rotulo, valor, det) {
 function legenda(sufixo) {
   return '<div class="legenda"><span>' + bolinha("p1") + esc(nome("p1")) + "</span><span>" +
     bolinha("p2") + esc(nome("p2")) + '</span><span class="mudo">(' + sufixo + ")</span></div>";
-}
-function fraseAcerto(saldo, curta) {
-  if (Math.abs(saldo) < 0.01) return curta ? "quites" : "Vocês estão quites ✓";
-  var deve = saldo > 0 ? "p2" : "p1", recebe = N.outra(deve);
-  return esc(nome(deve)) + " deve " + brl(Math.abs(saldo)) + " para " + esc(nome(recebe));
 }
 function ligarLinks(el) {
   $$("[data-ir]", el).forEach(function (a) {
@@ -1729,7 +1666,7 @@ function desenharConfig() {
       "</div>";
   });
   h += "</div>";
-  h += '<p class="sub">O nome do Pix serve para reconhecer as transferências entre vocês: elas não contam como gasto e entram no acerto de contas.</p>';
+  h += '<p class="sub">O nome do Pix serve para reconhecer as transferências entre vocês: elas não contam como gasto.</p>';
   h += '<div class="linha-form"><label class="campo">Quanto das despesas do casal é de ' + esc(nome("p1")) +
     '<span><input type="number" id="c-div" min="0" max="100" step="1" value="' + Math.round(N.pct(estado, "p1") * 100) + '" style="width:80px"> %</span></label>' +
     '<span class="sub" id="c-div-outra">' + esc(nome("p2")) + " fica com " + Math.round(N.pct(estado, "p2") * 100) + "%</span></div>";

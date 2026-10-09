@@ -19,3 +19,5 @@ jobs:
         run: node testes/financas_worker.mjs
       - name: Script do Pluggy
         run: python testes/financas_pluggy.py
+      - name: Subir para o cofre
+        run: node testes/subir_cofre.mjs

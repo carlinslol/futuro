@@ -2,7 +2,7 @@
 //
 // O que importa acertar aqui é dinheiro: o sinal de cada formato do Nubank
 // (fatura e extrato vêm com sinais opostos), não duplicar quando o mesmo
-// arquivo é importado de novo, e o acerto entre os dois - que não pode contar
+// arquivo é importado de novo, e o Pix entre os dois - que não pode contar
 // o mesmo Pix duas vezes quando os dois extratos estão importados.
 const fs = require("fs");
 const path = require("path");
@@ -98,35 +98,17 @@ r = N.importar(e, "p2-cartao", c1.itens, "nubank-cartao");
 ok(r.novas === c1.itens.length, "mesmo arquivo em outra pessoa conta separado");
 e.transacoes = e.transacoes.filter((t) => t.conta !== "p2-cartao");
 
-console.log("\n=== acerto entre os dois ===");
+console.log("\n=== os dois extratos e a fatura ===");
 const a = N.estadoPadrao();
 a.pessoas.p1.nomeBanco = "Bruno Costa";
 a.pessoas.p2.nomeBanco = "Ana Pereira";
 N.importar(a, "p1-cartao", N.lerArquivo(exemplo("cartao-pessoa1-2026-09.csv")).itens, "x");
 N.importar(a, "p2-cartao", N.lerArquivo(exemplo("cartao-pessoa2-2026-09.csv")).itens, "x");
 N.importar(a, "p1-conta", N.lerArquivo(exemplo("extrato-pessoa1-2026-09.csv")).itens, "x");
-// Casal em setembro, pago por p1: Carrefour 312.48 é de agosto; Assai 264.90; ENEL 189.90;
-// Claro 109.90; imobiliária (aluguel) 1800.  p2: Hortifruti 96.30, Mercado Dia 81.25.
-const casalP1 = 264.90 + 189.90 + 109.90 + 1800;
-const casalP2 = 96.30 + 81.25;
-let ac = N.acerto(a, "2026-09");
-ok(perto(ac.pagoPor.p1, casalP1), "despesas do casal pagas por p1", ac.pagoPor.p1);
-ok(perto(ac.pagoPor.p2, casalP2), "despesas do casal pagas por p2", ac.pagoPor.p2);
-// p2 recebeu de p1? Não: p1 RECEBEU 300 de p2 (só o extrato de p1 está importado).
-ok(perto(ac.transferencias.p2, 300), "Pix recebido conta quando a saída não foi importada", JSON.stringify(ac.transferencias));
-const esperado = casalP1 / 2 - casalP2 / 2 - 300;
-ok(perto(ac.saldo, esperado), "saldo: metade do que p1 pagou - metade do de p2 - Pix", ac.saldo + " x " + esperado.toFixed(2));
-
 N.importar(a, "p2-conta", N.lerArquivo(exemplo("extrato-pessoa2-2026-09.csv")).itens, "x");
-ac = N.acerto(a, "2026-09");
-const casalP2b = casalP2 + 220; // condomínio pago pela p2
-ok(perto(ac.transferencias.p2, 300), "com os dois extratos o mesmo Pix conta UMA vez", JSON.stringify(ac.transferencias));
-ok(perto(ac.saldo, casalP1 / 2 - casalP2b / 2 - 300), "saldo com os dois extratos", ac.saldo);
-
-a.divisao.p1 = 70;
-ac = N.acerto(a, "2026-09");
-ok(perto(ac.saldo, casalP1 * 0.3 - casalP2b * 0.7 - 300), "divisão 70/30", ac.saldo);
-a.divisao.p1 = 50;
+const pix = a.transacoes.filter((t) => t.categoria === "entre");
+ok(pix.length === 2 && !pix.some(N.ehGasto), "Pix entre vocês (nos dois extratos) não conta como gasto", pix.length);
+ok(N.acerto === undefined, "não existe mais o cálculo de quem deve a quem");
 
 console.log("\n=== resumo do mês ===");
 const rs = N.resumoMes(a, "2026-09");
@@ -136,6 +118,11 @@ ok(perto(soma(rs.custo), rs.total), "custo p1 + p2 = total");
 ok(!rs.categorias.some((c) => N.ESPECIAIS[c.id]), "entradas/fora/entre não aparecem como gasto");
 ok(!a.transacoes.some((t) => /Pagamento de fatura/.test(t.descricao) && N.ehGasto(t)), "fatura não conta duas vezes");
 ok(perto(rs.entradas.p1, 5200) && perto(rs.entradas.p2, 3900), "entradas de cada um", JSON.stringify(rs.entradas));
+a.divisao.p1 = 70;
+const rs70 = N.resumoMes(a, "2026-09");
+ok(perto(rs70.custo.p1, rs70.pessoal.p1 + rs70.casal * 0.7) && perto(rs70.custo.p2, rs70.pessoal.p2 + rs70.casal * 0.3),
+   "custo de cada um com divisão 70/30", rs70.custo.p1 + " / " + rs70.custo.p2);
+a.divisao.p1 = 50;
 const mercado = rs.categorias.find((c) => c.id === "mercado");
 ok(perto(mercado.total, 264.90 + 96.30 + 81.25), "mercado no mês", mercado.total);
 const serie = N.serieMeses(a, "2026-09", 6);

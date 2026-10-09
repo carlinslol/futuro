@@ -2,8 +2,8 @@
 
 Controle de gastos para duas pessoas com Nubank que **não moram juntas**: cada
 um usa no próprio celular, os dois veem e editam os mesmos dados. O app junta
-o **cartão** e a **conta** de cada um, separa o que é pessoal do que é do
-casal e diz **quem deve quanto para quem**.
+o **cartão** e a **conta** de cada um e separa o que é pessoal do que é do
+casal.
 
 ```
  celular dele ─┐                                   ┌─ celular dela
@@ -61,7 +61,7 @@ gratuitos, e dá para usar os dois:
 
 1. Em **Configurar**, ponham o nome de vocês dois e o **nome completo como
    aparece no Pix**. É assim que o app reconhece um Pix entre vocês: ele não
-   conta como gasto e entra no acerto. (Basta um fazer: sincroniza.)
+   conta como gasto. (Basta um fazer: sincroniza.)
 2. No app do Nubank, exporte:
    - **Fatura do cartão**: Cartão de crédito → fatura do mês → *Exportar fatura* → CSV;
    - **Extrato da conta**: Conta → extrato → *Pedir extrato* → CSV (ou OFX).
@@ -116,10 +116,13 @@ Depois, no seu computador:
    precisa procurar no dashboard. (A API do Pluggy não tem como listar os itens:
    o itemId só existe no fim de uma conexão, e é essa conexão que o script faz.)
 6. Confira com `python financas_pluggy.py --testar` (lista as contas sem baixar).
-7. Abra o `financas.html` **direto do computador** uma vez e conecte ao cofre
-   (aberto do computador, o app pede também o endereço do Worker).
-8. Daí em diante: **`sincronizar.bat`**. Ele baixa o que é novo, abre o app,
-   o app importa e sobe para o cofre — e chega no celular dos dois.
+7. No mesmo `financas_config.txt`, preencha `cofre_senha` com a **mesma senha
+   do casal** que vocês usam no celular (o `cofre_servidor` já vem com o
+   endereço do site).
+8. Daí em diante: **`sincronizar.bat`**. Ele baixa o que é novo e sobe direto
+   para o cofre (`subir_cofre.mjs`, com o Node) — chega no celular dos dois,
+   sem abrir navegador. Se a senha não abrir o cofre de vocês, ele só avisa:
+   nunca cria um cofre novo.
 
 **Cada um no seu computador:** como vocês não moram juntos, dá para cada um
 rodar o script no próprio computador, preenchendo só a própria pessoa no
@@ -131,10 +134,9 @@ Opções: `--dias 365` busca o ano inteiro; `--atualizar` pede ao Pluggy para
 buscar no banco antes de baixar (no conector MeuPluggy quem atualiza é o
 próprio Meu Pluggy; se ele recusar, o script segue com o que já tem).
 
-O `financas.html` aberto **pelo endereço do Worker** não lê o
-`financas-dados.js`: esse arquivo tem dado bancário em claro e nunca sobe
-para servidor nenhum. Quem leva os dados para o cofre é o app aberto direto
-do computador onde o script rodou.
+O `financas-dados.js` (dado bancário em claro) nunca vai para servidor nenhum:
+o `subir_cofre.mjs` lê esse arquivo, cifra no seu computador com a senha do
+casal e só então manda para o cofre — o mesmo que o app faz no celular.
 
 Condições e limites do Pluggy mudam: confira a
 [página de preços](https://www.pluggy.ai/precos) antes. Se o grátis acabar, o
@@ -151,8 +153,7 @@ o segredo do Pluggy, o outro o extrato de vocês.
 - quanto vocês gastaram, comparado ao mês anterior;
 - o **custo real** de cada um: o que é pessoal mais a sua parte das despesas do casal;
 - gastos por categoria, com **orçamento** (passou do limite, fica vermelho);
-- os últimos 6 meses e os maiores gastos;
-- o **acerto**: quem deve quanto para quem, já descontados os Pix entre vocês.
+- os últimos 6 meses e os maiores gastos.
 
 **Transações**: troque categoria e divisão (pessoal ou do casal) de qualquer
 uma. Ao mudar a categoria, o app oferece criar uma regra para as próximas.
@@ -166,7 +167,7 @@ categorias com orçamento e quais são do casal por padrão, regras e backup.
 - **pagamento de fatura** no extrato (as compras já estão na fatura);
 - **pagamento recebido** na fatura;
 - **caixinhas e RDB** (aplicação e resgate);
-- **Pix entre vocês**: vão para o acerto, não para os gastos;
+- **Pix entre vocês**: dinheiro que só mudou de mão dentro do casal;
 - **entradas** (salário, Pix recebido) aparecem separadas.
 
 Estorno no cartão abate da categoria.
@@ -211,7 +212,8 @@ Estorno no cartão abate da categoria.
 | `publicar.bat` / `publicar.ps1` | publica o Worker (cria o banco na primeira vez) |
 | `worker/` | o servidor: `index.js`, `wrangler.toml`, `schema.sql` |
 | `financas_pluggy.py` | baixa as transações pelo Meu Pluggy / Pluggy (opcional) |
-| `sincronizar.bat` | roda o script e abre o app |
+| `sincronizar.bat` | baixa do Pluggy e sobe para o cofre |
+| `subir_cofre.mjs` | sobe o `financas-dados.js` para o cofre, cifrado (Node) |
 | `exemplos/` | faturas e extratos **fictícios** para testar sem dado real |
 | `financas_config.txt` | criado pelo script; **segredo** |
 | `financas-dados.js` | gerado pelo script; **dados bancários** |
@@ -221,5 +223,6 @@ Testes (o `rodar_testes.bat` roda todos):
 ```
 node testes/financas.js            leitura dos arquivos, contas, mesclagem, criptografia
 node testes/financas_worker.mjs    o servidor, inclusive dois gravando ao mesmo tempo
+node testes/subir_cofre.mjs        subir para o cofre sem navegador
 python testes/financas_pluggy.py   o script do Pluggy contra um Pluggy falso
 ```
