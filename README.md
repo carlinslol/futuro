@@ -95,25 +95,26 @@ Passo a passo — **cada um faz o seu**:
 2. Crie a conta em <https://dashboard.pluggy.ai>. Ela já vem com uma
    aplicação; anote o **Client ID** e o **Client Secret** dela. (O dashboard
    avisa de um teste grátis de 15 dias: é da API paga, pode ignorar.)
-3. No dashboard, em *Conectar conta*, escolha o conector **MeuPluggy** e entre
-   com a sua conta do Meu Pluggy. Isso gera um **itemId**: anote.
-4. Mande as três coisas para quem vai rodar o script — ou rode você mesmo no
-   seu computador (veja abaixo).
+3. Ainda no dashboard, na sua aplicação, abra **Conectores** e confira que o
+   **MeuPluggy** está ligado.
 
-Depois:
+Depois, no seu computador:
 
-5. Rode `python financas_pluggy.py` uma vez. Ele cria o `financas_config.txt`:
+4. Rode `python financas_pluggy.py` uma vez. Ele cria o `financas_config.txt`.
+   Preencha só o Client ID e o Client Secret da sua pessoa (a Pessoa 1 é a azul
+   no app, a Pessoa 2 a laranja) e deixe o resto em branco:
 
    ```
-   pessoa1 = itemId da Pessoa 1 (cor azul no app)
+   pessoa1 =
    pessoa1_client_id = ...
    pessoa1_client_secret = ...
-
-   pessoa2 = itemId da Pessoa 2 (cor laranja)
-   pessoa2_client_id = ...
-   pessoa2_client_secret = ...
    ```
 
+5. Rode `python financas_pluggy.py --conectar pessoa1` (ou `pessoa2`). Ele abre
+   no navegador a janela oficial do Pluggy: escolha **MeuPluggy** e entre com a
+   sua conta do Meu Pluggy. No fim, o **itemId** vai sozinho para o config — não
+   precisa procurar no dashboard. (A API do Pluggy não tem como listar os itens:
+   o itemId só existe no fim de uma conexão, e é essa conexão que o script faz.)
 6. Confira com `python financas_pluggy.py --testar` (lista as contas sem baixar).
 7. Abra o `financas.html` **direto do computador** uma vez e conecte ao cofre
    (aberto do computador, o app pede também o endereço do Worker).

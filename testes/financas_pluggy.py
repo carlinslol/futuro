@@ -71,6 +71,11 @@ class Falso(BaseHTTPRequestHandler):
 
     def do_POST(self):
         corpo = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+        if self.path == "/connect_token":
+            if self.headers.get("X-API-KEY") not in APPS.values():
+                return self._json(403, {"message": "sem chave"})
+            pedidos.append(("/connect_token", corpo))
+            return self._json(200, {"accessToken": "token-de-conexao-" + self.headers["X-API-KEY"]})
         chave = APPS.get((corpo.get("clientId"), corpo.get("clientSecret")))
         if self.path == "/auth" and chave:
             return self._json(200, {"apiKey": chave})
@@ -204,6 +209,61 @@ cod, txt = rodar()
 dados = F.ler_saida()
 ok(cod == 0 and any(t["id"] == "t8" and t["pessoa"] == "p2" for t in dados["transacoes"]),
    "cada um pode rodar só com os próprios dados", txt.strip().splitlines()[-1])
+
+print("\n=== --conectar ===")
+import urllib.request as U
+NOVO = "cccccccc-0000-4000-8000-00000000000c"
+with open(F.CONFIG, "w", encoding="utf-16") as f:   # salvo como "Unicode" pelo Bloco de Notas
+    f.write("# meu config\npessoa1 = Brenno\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\n"
+            "pessoa2 =\n")
+visto = {}
+
+
+def navegador(url, item=NOVO):
+    # faz o papel do navegador: abre a página e, como a janela do Pluggy faria, avisa o itemId
+    def ir():
+        pagina = U.urlopen(url).read().decode("utf-8")
+        visto["pagina"] = pagina
+        U.urlopen(U.Request(url + "/pronto", data=json.dumps({"itemId": item, "conector": "MeuPluggy"}).encode(),
+                            headers={"Content-Type": "application/json"}, method="POST")).read()
+    threading.Thread(target=ir).start()
+    return True
+
+
+pedidos.clear()
+saida = io.StringIO()
+with contextlib.redirect_stdout(saida):
+    got = F.conectar("pessoa1", abrir=navegador, espera=10)
+ok(got == NOVO, "--conectar devolve o itemId da janela do Pluggy")
+ok("token-de-conexao-chave-a" in visto.get("pagina", ""), "a página leva o connect token da aplicação da pessoa")
+ok(("/connect_token", {"options": {"clientUserId": "pessoa1"}}) in pedidos, "connect token pedido à API")
+cfg = F.ler_chaves()
+ok(cfg["pessoa1"] == NOVO and cfg["pessoa1_client_id"] == "id-a" and "# meu config" in F.ler_texto(F.CONFIG),
+   "nome trocado pelo itemId, resto do config intacto", cfg["pessoa1"])
+NOVO2 = "dddddddd-0000-4000-8000-00000000000d"
+with contextlib.redirect_stdout(io.StringIO()):
+    F.conectar("pessoa1", abrir=lambda u: navegador(u, NOVO2), espera=10)
+ok(F.ler_chaves()["pessoa1"] == NOVO + ", " + NOVO2, "segundo banco entra depois de vírgula")
+cod = None
+try:
+    with contextlib.redirect_stdout(io.StringIO()):
+        F.conectar("pessoa2", abrir=lambda u: True, espera=1)
+except F.Erro as e:
+    cod = str(e)
+ok(cod and "Faltam pessoa2_client_id" in cod, "sem credencial da pessoa: erro claro antes de abrir nada", cod)
+url_ruim = {}
+try:
+    with contextlib.redirect_stdout(io.StringIO()):
+        F.conectar("pessoa1", abrir=lambda u: url_ruim.setdefault("u", u) and False, espera=1)
+except F.Erro as e:
+    cod = str(e)
+ok("tempo" in cod, "ninguém conectou: desiste com aviso", cod[:40])
+r404 = None
+try:
+    U.urlopen(url_ruim["u"].rsplit("/", 1)[0] + "/outro-caminho")
+except Exception as e:
+    r404 = str(e)
+ok(r404 is not None, "servidor local fechado depois")
 
 srv.shutdown()
 print("\n" + ("%d FALHA(S)" % len(falhas) if falhas else "tudo certo"))
