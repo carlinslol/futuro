@@ -7,7 +7,7 @@
 #   wrangler d1 execute financas-casal --remote --file schema.sql
 #   wrangler deploy
 #
-# Ele sobe em https://financas-casal.<sua-conta>.workers.dev - é esse o
+# Está no ar em https://financas-casal.contatocarlinslol.workers.dev - é esse o
 # endereço que vocês dois abrem no celular. Para usar um subdomínio seu
 # (ex.: financas.seudominio.com), descomente o bloco [[routes]] no fim.
 #
@@ -26,7 +26,7 @@ fallthrough = true
 [[d1_databases]]
 binding = "DB"
 database_name = "financas-casal"
-database_id = "COLE-AQUI-O-ID-DO-wrangler-d1-create"
+database_id = "a1ac670b-2eab-4214-805d-171be6f25af1"
 
 [vars]
 # Quantos cofres este servidor aceita criar. Um casal usa um. O teto existe
