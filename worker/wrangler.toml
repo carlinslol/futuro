@@ -1,0 +1,38 @@
+# Finanças do Casal - o Worker que serve o app e guarda o cofre cifrado.
+#
+# Primeira vez (o publicar.bat faz tudo isto):
+#   wrangler login
+#   wrangler d1 create financas-casal
+#   copie o database_id que ele imprime para a linha database_id abaixo
+#   wrangler d1 execute financas-casal --remote --file schema.sql
+#   wrangler deploy
+#
+# Ele sobe em https://financas-casal.<sua-conta>.workers.dev - é esse o
+# endereço que vocês dois abrem no celular. Para usar um subdomínio seu
+# (ex.: financas.seudominio.com), descomente o bloco [[routes]] no fim.
+#
+name = "financas-casal"
+main = "index.js"
+compatibility_date = "2026-01-01"
+workers_dev = true
+
+# O financas.html entra no Worker como texto na hora do deploy: uma fonte
+# só, o mesmo arquivo que abre direto do computador.
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "financas-casal"
+database_id = "COLE-AQUI-O-ID-DO-wrangler-d1-create"
+
+[vars]
+# Quantos cofres este servidor aceita criar. Um casal usa um. O teto existe
+# para ninguém que descubra o endereço usar o seu Worker de depósito.
+MAX_COFRES = "2"
+
+# [[routes]]
+# pattern = "financas.seudominio.com"
+# custom_domain = true

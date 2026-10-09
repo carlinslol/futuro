@@ -1,0 +1,15 @@
+# Dados bancários e credenciais: nunca saem da máquina.
+# financas-dados.js tem o extrato de vocês dois; financas_config.txt tem o
+# segredo do Pluggy; o backup exportado pelo app tem tudo.
+financas_config.txt
+financas-dados.js
+financas-dados.js.tmp
+financas-backup-*.json
+*.key
+.env
+
+# wrangler e Python
+.wrangler/
+node_modules/
+__pycache__/
+*.pyc

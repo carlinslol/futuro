@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finanças do Casal</title>
+<meta name="theme-color" content="#6d1fb8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Finanças">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%236d1fb8'/%3E%3Ctext x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3ER$%3C/text%3E%3C/svg%3E">
+<style>
+/* Cores por papel. As duas pessoas usam os dois primeiros tons da paleta
+   categórica validada (azul e laranja) - passam no teste de daltonismo nos
+   dois temas. A cor nunca anda sozinha: todo número tem o nome do lado. */
+:root {
+  color-scheme: light;
+  --fundo: #f9f9f7;
+  --superficie: #fcfcfb;
+  --superficie-2: #f0efec;
+  --tinta: #0b0b0b;
+  --tinta-2: #52514e;
+  --tinta-3: #6b6a65;
+  --linha: #e1e0d9;
+  --base: #c3c2b7;
+  --borda: rgba(11,11,11,0.10);
+  --destaque: #6d1fb8;
+  --destaque-tinta: #ffffff;
+  --p1: #2a78d6;
+  --p2: #eb6834;
+  --bom: #006300;
+  --ruim: #b42d2d;
+  --aviso-fundo: #fff4d6;
+  --sombra: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --fundo: #0d0d0d;
+    --superficie: #1a1a19;
+    --superficie-2: #262624;
+    --tinta: #ffffff;
+    --tinta-2: #c3c2b7;
+    --tinta-3: #9a988f;
+    --linha: #2c2c2a;
+    --base: #383835;
+    --borda: rgba(255,255,255,0.10);
+    --destaque: #a974f0;
+    --destaque-tinta: #0d0d0d;
+    --p1: #3987e5;
+    --p2: #d95926;
+    --bom: #0ca30c;
+    --ruim: #e66767;
+    --aviso-fundo: #3a2f12;
+    --sombra: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --fundo: #0d0d0d;
+  --superficie: #1a1a19;
+  --superficie-2: #262624;
+  --tinta: #ffffff;
+  --tinta-2: #c3c2b7;
+  --tinta-3: #9a988f;
+  --linha: #2c2c2a;
+  --base: #383835;
+  --borda: rgba(255,255,255,0.10);
+  --destaque: #a974f0;
+  --destaque-tinta: #0d0d0d;
+  --p1: #3987e5;
+  --p2: #d95926;
+  --bom: #0ca30c;
+  --ruim: #e66767;
+  --aviso-fundo: #3a2f12;
+  --sombra: none;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--fundo);
+  color: var(--tinta);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--destaque); }
+
+.topo {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borda);
+}
+.topo-dentro {
+  max-width: 1100px; margin: 0 auto; padding: 10px 16px;
+  display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center;
+}
+.marca { font-weight: 700; font-size: 17px; margin-right: auto; display: flex; align-items: center; gap: 8px; }
+.nuvem-ind {
+  border: 1px solid var(--borda); background: var(--superficie-2); color: var(--tinta-2);
+  border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 500; cursor: pointer;
+}
+.nuvem-ind.erro { color: var(--ruim); }
+.marca .ponto { width: 12px; height: 12px; border-radius: 50%; background: var(--destaque); }
+.abas { display: flex; gap: 4px; overflow-x: auto; }
+.aba {
+  border: 0; background: none; padding: 7px 12px; border-radius: 8px; cursor: pointer;
+  color: var(--tinta-2); white-space: nowrap;
+}
+.aba:hover { background: var(--superficie-2); }
+.aba[aria-selected="true"] { background: var(--destaque); color: var(--destaque-tinta); font-weight: 600; }
+
+.mes-nav { display: flex; align-items: center; gap: 4px; }
+.mes-nav button {
+  border: 1px solid var(--borda); background: var(--superficie); border-radius: 8px;
+  width: 32px; height: 32px; cursor: pointer;
+}
+.mes-nav button:hover { background: var(--superficie-2); }
+.mes-nav span { min-width: 130px; text-align: center; font-weight: 600; }
+
+main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.painel { display: none; }
+.painel.ativo { display: block; }
+
+.cartao {
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 12px;
+  padding: 16px; box-shadow: var(--sombra); margin-bottom: 16px;
+}
+.cartao h2 { font-size: 16px; margin: 0 0 12px; }
+.cartao h3 { font-size: 14px; margin: 16px 0 8px; color: var(--tinta-2); }
+.sub { color: var(--tinta-2); font-size: 13px; }
+.mudo { color: var(--tinta-3); }
+
+.grade { display: grid; gap: 16px; }
+.grade > .cartao { margin-bottom: 0; }
+.grade-kpi { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 16px; }
+.grade-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.grade-2 { align-items: start; }
+
+.kpi { padding: 14px 16px; }
+.kpi .rotulo { font-size: 13px; color: var(--tinta-2); display: flex; align-items: center; gap: 6px; }
+.kpi .valor { font-size: 26px; font-weight: 700; margin: 2px 0; }
+.kpi .det { font-size: 13px; color: var(--tinta-2); }
+.delta-sobe { color: var(--ruim); }
+.delta-desce { color: var(--bom); }
+
+.bolinha { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.b-p1 { background: var(--p1); }
+.b-p2 { background: var(--p2); }
+
+.legenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--tinta-2); margin-bottom: 10px; }
+.legenda span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Barras horizontais por categoria */
+.cat-linha { display: grid; grid-template-columns: minmax(90px, 150px) 1fr auto; gap: 4px 10px; align-items: center; padding: 6px 0; }
+.cat-nome { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-trilho { position: relative; height: 14px; }
+.cat-barra { display: flex; height: 100%; gap: 2px; }
+.cat-barra > div { height: 100%; min-width: 0; }
+.cat-barra > div:first-child { border-radius: 4px 0 0 4px; }
+.cat-barra > div:last-child { border-radius: 0 4px 4px 0; }
+.cat-barra > div:only-child { border-radius: 4px; }
+.cat-meta { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--tinta-2); }
+.cat-valor { font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cat-orc { grid-column: 2 / 4; font-size: 12px; color: var(--tinta-2); margin-top: -2px; }
+.cat-orc.acima { color: var(--ruim); font-weight: 600; }
+
+/* Colunas por mês */
+.colunas { display: flex; align-items: flex-end; gap: 10px; height: 170px; padding-top: 8px; border-bottom: 1px solid var(--base); }
+.coluna { flex: 1; display: flex; flex-direction: column-reverse; gap: 2px; height: 100%; cursor: default; }
+.coluna > div { width: 100%; max-width: 48px; margin: 0 auto; }
+.coluna > div:last-child { border-radius: 4px 4px 0 0; }
+.coluna.atual { outline: 2px dashed var(--linha); outline-offset: 3px; border-radius: 4px; }
+.col-rotulos { display: flex; gap: 10px; margin-top: 6px; }
+.col-rotulos div { flex: 1; text-align: center; font-size: 12px; color: var(--tinta-3); }
+
+.dica {
+  position: fixed; z-index: 50; pointer-events: none; display: none;
+  background: var(--superficie); color: var(--tinta); border: 1px solid var(--borda);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  max-width: 260px; white-space: pre-line;
+}
+
+.acerto { font-size: 18px; font-weight: 600; margin: 4px 0 8px; }
+.lista-simples { list-style: none; margin: 0; padding: 0; }
+.lista-simples li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--linha); font-size: 14px; }
+.lista-simples li:last-child { border-bottom: 0; }
+.lista-simples .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.desc-curta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* Transações */
+.filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
+.filtros input[type="search"] { flex: 1 1 200px; }
+input[type="text"], input[type="search"], input[type="number"], input[type="date"], select {
+  background: var(--superficie); border: 1px solid var(--base); border-radius: 8px; padding: 6px 8px; min-height: 34px;
+}
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--destaque); outline-offset: 1px; }
+.botao {
+  border: 1px solid var(--base); background: var(--superficie); border-radius: 8px; padding: 6px 12px;
+  cursor: pointer; min-height: 34px;
+}
+.botao:hover { background: var(--superficie-2); }
+.botao.primario { background: var(--destaque); color: var(--destaque-tinta); border-color: var(--destaque); font-weight: 600; }
+.botao.perigo { color: var(--ruim); }
+.botao-x { border: 0; background: none; cursor: pointer; color: var(--tinta-3); font-size: 18px; line-height: 1; padding: 4px 6px; border-radius: 6px; }
+.botao-x:hover { background: var(--superficie-2); color: var(--ruim); }
+
+.tx-cab, .tx {
+  display: grid; grid-template-columns: 82px minmax(0, 1fr) 120px 150px 120px 100px 28px;
+  gap: 8px; align-items: center; padding: 6px 4px;
+}
+.tx-cab { font-size: 12px; color: var(--tinta-3); border-bottom: 1px solid var(--base); }
+.tx { border-bottom: 1px solid var(--linha); font-size: 14px; }
+.tx .valor { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tx .entrada { color: var(--bom); }
+.tx .fora { color: var(--tinta-3); text-decoration: line-through; }
+.tx select { width: 100%; padding: 3px 4px; min-height: 30px; font-size: 13px; }
+.tx .quem { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--tinta-2); white-space: nowrap; overflow: hidden; }
+.tx-desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 520px) {
+  .topo-dentro { padding: 8px 12px; }
+  .abas { width: 100%; order: 3; }
+  .aba { flex: 1; padding: 7px 4px; font-size: 14px; }
+  .mes-nav span { min-width: 120px; }
+  .kpi .valor { font-size: 22px; }
+  .tabela-conf td:nth-child(2) { width: 96px; }
+  .tabela-conf td:nth-child(2) .mudo { font-size: 12px; }
+  .tabela-conf th:nth-child(3) { font-size: 0; }
+  .tabela-conf th:nth-child(3)::after { content: "Casal"; font-size: 12px; }
+}
+.tx-total { display: flex; justify-content: space-between; padding: 10px 4px; font-weight: 600; }
+@media (max-width: 760px) {
+  .tx-cab { display: none; }
+  .tx {
+    grid-template-columns: 1fr auto 28px;
+    grid-template-areas: "desc valor x" "quem data data" "cat div div";
+  }
+  .tx > :nth-child(1) { grid-area: data; text-align: right; font-size: 12px; color: var(--tinta-3); }
+  .tx > :nth-child(2) { grid-area: desc; font-weight: 600; }
+  .tx > :nth-child(3) { grid-area: quem; }
+  .tx > :nth-child(4) { grid-area: cat; }
+  .tx > :nth-child(5) { grid-area: div; }
+  .tx > :nth-child(6) { grid-area: valor; }
+  .tx > :nth-child(7) { grid-area: x; }
+}
+
+/* Importar */
+.soltar {
+  border: 2px dashed var(--base); border-radius: 12px; padding: 28px 16px; text-align: center;
+  cursor: pointer; color: var(--tinta-2);
+}
+.soltar.por-cima { border-color: var(--destaque); background: var(--superficie-2); }
+.soltar strong { color: var(--tinta); }
+.passos { margin: 0; padding-left: 20px; }
+.passos li { margin: 4px 0; }
+.log { margin-top: 12px; }
+.log div { padding: 6px 10px; border-radius: 8px; margin-bottom: 6px; background: var(--superficie-2); font-size: 14px; }
+.log .erro { color: var(--ruim); }
+.escolha-pessoa { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.escolha-pessoa label {
+  display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--base); border-radius: 999px;
+  padding: 6px 14px; cursor: pointer;
+}
+.escolha-pessoa input { accent-color: var(--destaque); }
+.escolha-pessoa label:has(input:checked) { border-color: var(--destaque); background: var(--superficie-2); font-weight: 600; }
+code { background: var(--superficie-2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+pre { background: var(--superficie-2); padding: 10px 12px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+
+/* Configurar */
+.tabela-conf { width: 100%; border-collapse: collapse; }
+.tabela-conf th { text-align: left; font-size: 12px; color: var(--tinta-3); font-weight: 500; padding: 4px 6px; border-bottom: 1px solid var(--base); }
+.tabela-conf td { padding: 4px 6px; border-bottom: 1px solid var(--linha); }
+.tabela-conf input[type="text"], .tabela-conf input[type="number"], .tabela-conf select { width: 100%; }
+.rolar { overflow-x: auto; }
+.linha-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--tinta-2); }
+.campo input { color: var(--tinta); }
+.pessoas-conf { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.pessoa-conf { border: 1px solid var(--linha); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.pessoa-conf .titulo { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+.aviso { background: var(--aviso-fundo); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin-bottom: 16px; }
+.vazio { text-align: center; padding: 40px 16px; color: var(--tinta-2); }
+.vazio strong { display: block; font-size: 18px; color: var(--tinta); margin-bottom: 6px; }
+
+.brinde {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 60;
+  background: var(--tinta); color: var(--fundo); padding: 10px 14px; border-radius: 10px;
+  display: none; align-items: center; gap: 10px; flex-wrap: wrap; max-width: calc(100% - 32px);
+  font-size: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.25);
+}
+.brinde input { background: var(--fundo); color: var(--tinta); border: 0; border-radius: 6px; padding: 4px 6px; width: 150px; }
+.brinde button { background: none; border: 1px solid currentColor; color: inherit; border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-dentro">
+    <div class="marca"><span class="ponto"></span>Finanças do Casal
+      <button class="nuvem-ind" id="nuvem-ind" hidden data-ir-config></button></div>
+    <nav class="abas" role="tablist">
+      <button class="aba" role="tab" data-aba="resumo" aria-selected="true">Resumo</button>
+      <button class="aba" role="tab" data-aba="transacoes">Transações</button>
+      <button class="aba" role="tab" data-aba="importar">Importar</button>
+      <button class="aba" role="tab" data-aba="config">Configurar</button>
+    </nav>
+    <div class="mes-nav">
+      <button id="mes-ant" aria-label="Mês anterior">‹</button>
+      <span id="mes-nome"></span>
+      <button id="mes-prox" aria-label="Próximo mês">›</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="painel ativo" id="painel-resumo"></section>
+  <section class="painel" id="painel-transacoes"></section>
+  <section class="painel" id="painel-importar"></section>
+  <section class="painel" id="painel-config"></section>
+</main>
+
+<div class="dica" id="dica"></div>
+<div class="brinde" id="brinde"></div>
+<input type="file" id="arquivo" multiple accept=".csv,.ofx,.txt" hidden>
+<input type="file" id="arquivo-backup" accept=".json" hidden>
+
+<!-- Dados baixados pelo financas_pluggy.py (opcional). Se o arquivo não
+     existir o navegador só ignora - o app funciona igual com CSV/OFX. -->
+<script src="financas-dados.js"></script>
+
+<!-- ======================================================================
+     NÚCLEO: só contas e leitura de arquivos, nada de tela. Fica separado
+     para o teste (testes/financas.js) rodar ele no Node sem navegador.
+     ====================================================================== -->
+<script id="nucleo">
+(function (raiz) {
+"use strict";
+
+/* Convenção de sinal em TODO o app: valor positivo = dinheiro que SAIU
+   (gasto); negativo = dinheiro que ENTROU (salário, Pix recebido, estorno).
+   Cada formato de arquivo é convertido para isso na leitura. */
+
+var PESSOAS = ["p1", "p2"];
+var TIPOS_CONTA = { cartao: "Cartão", conta: "Conta", outro: "Dinheiro/outro" };
+
+/* Categorias que não são gasto: ficam fora das somas. */
+var ESPECIAIS = {
+  entradas: true,  // salário, Pix recebido
+  entre: true,     // transferência entre vocês dois
+  fora: true       // pagamento de fatura, caixinha, investimento
+};
+
+var CATEGORIAS_PADRAO = [
+  { id: "mercado",     nome: "Mercado",               casal: true,  orcamento: 0 },
+  { id: "casa",        nome: "Casa e contas",         casal: true,  orcamento: 0 },
+  { id: "restaurante", nome: "Restaurante e delivery", casal: false, orcamento: 0 },
+  { id: "transporte",  nome: "Transporte",            casal: false, orcamento: 0 },
+  { id: "assinaturas", nome: "Assinaturas",           casal: false, orcamento: 0 },
+  { id: "compras",     nome: "Compras",               casal: false, orcamento: 0 },
+  { id: "saude",       nome: "Saúde",                 casal: false, orcamento: 0 },
+  { id: "lazer",       nome: "Lazer e viagem",        casal: false, orcamento: 0 },
+  { id: "educacao",    nome: "Educação",              casal: false, orcamento: 0 },
+  { id: "pets",        nome: "Pets",                  casal: false, orcamento: 0 },
+  { id: "outros",      nome: "Outros",                casal: false, orcamento: 0 },
+  { id: "entradas",    nome: "Entradas",              casal: false, orcamento: 0 },
+  { id: "entre",       nome: "Transferência entre vocês", casal: false, orcamento: 0 },
+  { id: "fora",        nome: "Não é gasto",           casal: false, orcamento: 0 }
+];
+
+/* Termos -> categoria. Comparação por palavra inteira, sem acento e sem
+   caixa: "dia" pega "DIA SUPERMERCADO" mas não "DIARIA". */
+var TERMOS_PADRAO = {
+  fora: ["pagamento de fatura", "pagamento recebido", "aplicacao rdb", "resgate rdb",
+         "dinheiro guardado", "dinheiro resgatado", "aplicacao", "resgate",
+         "pagamento da fatura", "saldo em atraso", "encerramento de divida"],
+  mercado: ["supermercado", "mercado", "carrefour", "assai", "atacadao", "pao de acucar",
+            "extra", "hortifruti", "sams club", "makro", "tenda", "dia", "oba", "st marche",
+            "zaffari", "mundial", "guanabara", "prezunic", "condor", "angeloni", "savegnago",
+            "sonda", "hirota", "minuto pa", "quitanda", "acougue", "sacolao"],
+  restaurante: ["ifood", "ifd", "rappi", "uber eats", "restaurante", "lanchonete", "burger",
+                "mcdonalds", "mc donalds", "bk", "pizzaria", "pizza", "padaria", "bar",
+                "cafe", "cafeteria", "starbucks", "subway", "outback", "habibs", "spoleto",
+                "giraffas", "sushi", "churrascaria", "hamburgueria", "ze delivery", "aiqfome",
+                "bobs", "kfc", "popeyes", "coco bambu", "madero", "jeronimo"],
+  transporte: ["uber", "99app", "99 app", "99 pop", "99 tecnologia", "cabify", "posto", "shell",
+               "ipiranga", "petrobras", "br mania", "estacionamento", "sem parar", "conectcar",
+               "veloe", "metro", "bilhete unico", "cptm", "onibus", "pedagio", "estapar",
+               "zul", "combustivel", "auto posto", "localiza", "movida", "unidas"],
+  casa: ["aluguel", "imobiliaria", "condominio", "enel", "light", "sabesp", "copasa", "cemig", "cpfl",
+         "celesc", "copel", "coelba", "comgas", "naturgy", "energia", "agua", "gas",
+         "claro", "vivo", "tim", "oi", "net", "internet", "iptu", "quintoandar", "leroy merlin",
+         "telha norte", "tok stok", "camicado", "casas bahia", "lavanderia"],
+  assinaturas: ["netflix", "spotify", "amazon prime", "prime video", "disney", "hbo", "max",
+                "youtube", "youtube premium", "apple com", "apple com bill", "google one",
+                "globoplay", "deezer", "paramount", "crunchyroll", "icloud", "chatgpt",
+                "openai", "anthropic", "claude ai", "microsoft", "xbox game pass",
+                "playstation plus", "kindle unlimited", "smart fit", "smartfit", "gympass",
+                "wellhub", "totalpass"],
+  compras: ["amazon", "mercadolivre", "mercado livre", "mercadopago", "shopee", "magalu",
+            "magazine luiza", "americanas", "shein", "aliexpress", "renner", "riachuelo",
+            "c a", "cea", "zara", "centauro", "netshoes", "kabum", "submarino", "decathlon",
+            "havan", "temu", "pernambucanas", "boticario", "natura", "sephora"],
+  saude: ["farmacia", "drogasil", "droga raia", "drogaria", "raia", "pague menos",
+          "panvel", "drogao", "hospital", "clinica", "laboratorio", "unimed",
+          "amil", "hapvida", "sulamerica", "bradesco saude", "odonto", "dentista",
+          "psicolog", "fleury", "dasa", "lavoisier", "exame"],
+  lazer: ["cinema", "cinemark", "kinoplex", "ingresso", "ingresso com", "sympla", "eventim",
+          "ticketmaster", "steam", "playstation", "nintendo", "show", "teatro", "parque",
+          "booking", "airbnb", "hotel", "pousada", "decolar", "latam", "gol", "azul",
+          "123milhas", "hurb", "clube"],
+  educacao: ["curso", "udemy", "alura", "coursera", "escola", "faculdade", "universidade",
+             "livraria", "saraiva", "estante virtual", "mensalidade"],
+  pets: ["petz", "cobasi", "petlove", "pet shop", "petshop", "veterinario", "veterinaria", "agropet"]
+};
+
+/* Dica de categoria que o Pluggy (Open Finance) manda. Só é usada quando
+   nenhuma regra do app reconheceu a descrição. */
+var MAPA_PLUGGY = [
+  ["credit card payment", "fora"], ["investment", "fora"], ["same person transfer", "fora"],
+  ["supermarket", "mercado"], ["groceries", "mercado"],
+  ["food delivery", "restaurante"], ["restaurant", "restaurante"], ["eating out", "restaurante"],
+  ["taxi", "transporte"], ["ride", "transporte"], ["gas station", "transporte"],
+  ["parking", "transporte"], ["public transport", "transporte"], ["transport", "transporte"],
+  ["rent", "casa"], ["housing", "casa"], ["utilities", "casa"], ["electricity", "casa"],
+  ["water", "casa"], ["telecommunication", "casa"], ["internet", "casa"],
+  ["streaming", "assinaturas"], ["digital services", "assinaturas"], ["gym", "assinaturas"],
+  ["online shopping", "compras"], ["shopping", "compras"], ["clothing", "compras"], ["electronics", "compras"],
+  ["pharmacy", "saude"], ["health", "saude"], ["dentist", "saude"],
+  ["leisure", "lazer"], ["travel", "lazer"], ["tickets", "lazer"], ["gaming", "lazer"],
+  ["education", "educacao"], ["books", "educacao"],
+  ["pet", "pets"]
+];
+
+/* ---------------------------------------------------------------- texto */
+
+function normalizar(s) {
+  return String(s == null ? "" : s)
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function contemTermo(descNorm, termoNorm) {
+  if (!termoNorm) return false;
+  return (" " + descNorm + " ").indexOf(" " + termoNorm + " ") !== -1;
+}
+
+/* Hash curto e estável (FNV-1a, duas sementes). Serve para dar um id fixo a
+   transações que não trazem id - a mesma linha importada duas vezes cai no
+   mesmo id e não duplica. */
+function hash(s) {
+  var a = 0x811c9dc5, b = 0x01000193 ^ 0x5bd1e995;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i);
+    a ^= c; a = Math.imul(a, 0x01000193) >>> 0;
+    b ^= c; b = Math.imul(b, 0x5bd1e995) >>> 0; b ^= b >>> 15;
+  }
+  return ("0000000" + a.toString(16)).slice(-8) + ("0000000" + (b >>> 0).toString(16)).slice(-8);
+}
+
+/* "1.234,56" / "-45.90" / "R$ 12,00" -> número */
+function lerValor(s) {
+  if (typeof s === "number") return s;
+  var t = String(s || "").replace(/[R$\s ]/g, "");
+  if (!t) return NaN;
+  var neg = false;
+  if (/^\(.*\)$/.test(t)) { neg = true; t = t.slice(1, -1); }
+  var v = t.lastIndexOf(","), p = t.lastIndexOf(".");
+  if (v > -1 && p > -1) {
+    if (v > p) t = t.replace(/\./g, "").replace(",", ".");
+    else t = t.replace(/,/g, "");
+  } else if (v > -1) {
+    t = t.replace(",", ".");
+  }
+  var n = parseFloat(t);
+  return neg ? -n : n;
+}
+
+/* "2024-01-15", "15/01/2024", "20240115120000[-3:BRT]" -> "2024-01-15" */
+function lerData(s) {
+  var t = String(s || "").trim(), m;
+  if ((m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t))) return m[1] + "-" + m[2] + "-" + m[3];
+  if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(t)))
+    return m[3] + "-" + ("0" + m[2]).slice(-2) + "-" + ("0" + m[1]).slice(-2);
+  if ((m = /^(\d{4})(\d{2})(\d{2})/.exec(t))) return m[1] + "-" + m[2] + "-" + m[3];
+  return null;
+}
+
+function arred(n) { return Math.round(n * 100) / 100; }
+
+/* ----------------------------------------------------------- arquivos */
+
+function lerCSV(texto) {
+  texto = String(texto).replace(/^﻿/, "");
+  var primeira = texto.split(/\r?\n/)[0] || "";
+  var sep = (primeira.split(";").length > primeira.split(",").length) ? ";" : ",";
+  var linhas = [], campo = "", linha = [], aspas = false;
+  for (var i = 0; i < texto.length; i++) {
+    var c = texto[i];
+    if (aspas) {
+      if (c === '"') {
+        if (texto[i + 1] === '"') { campo += '"'; i++; } else aspas = false;
+      } else campo += c;
+    } else if (c === '"' && campo === "") aspas = true;
+    else if (c === sep) { linha.push(campo); campo = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && texto[i + 1] === "\n") i++;
+      linha.push(campo); campo = "";
+      if (linha.length > 1 || linha[0] !== "") linhas.push(linha);
+      linha = [];
+    } else campo += c;
+  }
+  linha.push(campo);
+  if (linha.length > 1 || linha[0] !== "") linhas.push(linha);
+  return linhas;
+}
+
+function detectarFormato(texto) {
+  var t = String(texto).replace(/^﻿/, "");
+  if (/<OFX>|OFXHEADER/i.test(t.slice(0, 2000))) return "ofx";
+  var cab = normalizar((t.split(/\r?\n/)[0] || ""));
+  if (contemTermo(cab, "title") && contemTermo(cab, "amount")) return "nubank-cartao";
+  if (contemTermo(cab, "identificador") && contemTermo(cab, "descricao")) return "nubank-conta";
+  if (contemTermo(cab, "data") && contemTermo(cab, "valor")) return "csv-generico";
+  return null;
+}
+
+/* Lê um arquivo exportado do Nubank e devolve as transações já com o sinal
+   do app. tipo = "cartao" | "conta" (o que o arquivo é). */
+function lerArquivo(texto) {
+  var formato = detectarFormato(texto);
+  if (!formato) throw new Error("Formato não reconhecido. Use o CSV ou OFX exportado pelo Nubank.");
+  var itens = [], tipo;
+
+  if (formato === "ofx") {
+    tipo = /<CREDITCARDMSGSRSV1>|<CCSTMTRS>/i.test(texto) ? "cartao" : "conta";
+    var blocos = String(texto).match(/<STMTTRN>[\s\S]*?(<\/STMTTRN>|(?=<STMTTRN>)|(?=<\/BANKTRANLIST>))/gi) || [];
+    blocos.forEach(function (b) {
+      var tag = function (n) {
+        var m = new RegExp("<" + n + ">([^<\\r\\n]*)", "i").exec(b);
+        return m ? m[1].trim() : "";
+      };
+      var valor = lerValor(tag("TRNAMT"));
+      var data = lerData(tag("DTPOSTED"));
+      if (isNaN(valor) || !data) return;
+      itens.push({
+        data: data,
+        descricao: tag("MEMO") || tag("NAME") || "(sem descrição)",
+        valor: arred(-valor),
+        idExterno: tag("FITID") || null
+      });
+    });
+  } else {
+    var linhas = lerCSV(texto);
+    var cab = linhas.shift().map(normalizar);
+    var col = function (nomes) {
+      for (var i = 0; i < nomes.length; i++) {
+        var k = cab.indexOf(nomes[i]);
+        if (k > -1) return k;
+      }
+      return -1;
+    };
+    var cData, cDesc, cValor, cId = -1, inverte;
+    if (formato === "nubank-cartao") {
+      tipo = "cartao";
+      cData = col(["date"]); cDesc = col(["title"]); cValor = col(["amount"]);
+      inverte = false;            // fatura: compra vem positiva
+    } else if (formato === "nubank-conta") {
+      tipo = "conta";
+      cData = col(["data"]); cDesc = col(["descricao"]); cValor = col(["valor"]);
+      cId = col(["identificador"]);
+      inverte = true;             // extrato: saída vem negativa
+    } else {
+      tipo = "conta";
+      cData = col(["data", "date"]); cDesc = col(["descricao", "historico", "title", "lancamento"]);
+      cValor = col(["valor", "amount"]);
+      inverte = true;
+    }
+    if (cData < 0 || cValor < 0) throw new Error("O arquivo não tem as colunas de data e valor.");
+    linhas.forEach(function (l) {
+      var data = lerData(l[cData]), valor = lerValor(l[cValor]);
+      if (!data || isNaN(valor)) return;
+      itens.push({
+        data: data,
+        descricao: (cDesc > -1 ? l[cDesc] : "").trim() || "(sem descrição)",
+        valor: arred(inverte ? -valor : valor),
+        idExterno: cId > -1 && l[cId] ? l[cId].trim() : null
+      });
+    });
+  }
+  return { formato: formato, tipo: tipo, itens: itens };
+}
+
+/* --------------------------------------------------------------- estado */
+
+function estadoPadrao() {
+  var regras = [];
+  Object.keys(TERMOS_PADRAO).forEach(function (cat) {
+    TERMOS_PADRAO[cat].forEach(function (t) { regras.push({ termo: t, categoria: cat, divisao: "" }); });
+  });
+  return {
+    versao: 1,
+    pessoas: {
+      p1: { nome: "Eu", nomeBanco: "" },
+      p2: { nome: "Namorada", nomeBanco: "" }
+    },
+    divisao: { p1: 50 },          // % das despesas do casal que cabe à p1
+    categorias: CATEGORIAS_PADRAO.map(function (c) { return Object.assign({}, c); }),
+    regras: regras,
+    transacoes: [],
+    apagadas: {},                 // id -> quando foi apagada (para não voltar na sincronização)
+    configAlterada: 0,            // quando nomes/categorias/regras mudaram pela última vez
+    pluggy: { geradoEm: null }
+  };
+}
+
+/* Completa um estado salvo com o que faltar (versões futuras, backup velho). */
+function completar(e) {
+  var p = estadoPadrao();
+  if (!e || typeof e !== "object") return p;
+  e.pessoas = e.pessoas || p.pessoas;
+  PESSOAS.forEach(function (id) { e.pessoas[id] = Object.assign({ nome: p.pessoas[id].nome, nomeBanco: "" }, e.pessoas[id]); });
+  e.divisao = e.divisao || p.divisao;
+  e.categorias = Array.isArray(e.categorias) ? e.categorias : p.categorias;
+  ["outros", "entradas", "entre", "fora"].forEach(function (id) {
+    if (!e.categorias.some(function (c) { return c.id === id; }))
+      e.categorias.push(Object.assign({}, CATEGORIAS_PADRAO.filter(function (c) { return c.id === id; })[0]));
+  });
+  e.regras = Array.isArray(e.regras) ? e.regras : p.regras;
+  e.transacoes = Array.isArray(e.transacoes) ? e.transacoes : [];
+  e.pluggy = e.pluggy || { geradoEm: null };
+  e.apagadas = e.apagadas && typeof e.apagadas === "object" ? e.apagadas : {};
+  e.configAlterada = Number(e.configAlterada) || 0;
+  return e;
+}
+
+function pessoaDaConta(contaId) { return String(contaId).split("-")[0]; }
+function tipoDaConta(contaId) { return String(contaId).split("-")[1]; }
+function outra(p) { return p === "p1" ? "p2" : "p1"; }
+function mesDe(data) { return String(data).slice(0, 7); }
+function categoria(e, id) {
+  for (var i = 0; i < e.categorias.length; i++) if (e.categorias[i].id === id) return e.categorias[i];
+  return null;
+}
+function ehGasto(t) { return !ESPECIAIS[t.categoria]; }
+function pct(e, p) {
+  var a = Math.min(100, Math.max(0, Number(e.divisao.p1)));
+  if (isNaN(a)) a = 50;
+  return (p === "p1" ? a : 100 - a) / 100;
+}
+
+/* Decide categoria e divisão de uma transação nova. Ordem:
+   1. Pix/transferência para a outra pessoa (pelo nome no banco) -> "entre"
+   2. regras do usuário (termo mais longo ganha: "uber eats" antes de "uber")
+   3. dica do Pluggy
+   4. valor negativo sem regra: na conta é entrada; no cartão é estorno
+   5. "outros" */
+function categorizar(e, descricao, valor, contaId, dicaPluggy) {
+  var d = normalizar(descricao);
+  var dono = pessoaDaConta(contaId);
+  var cat = null, div = "";
+
+  var nomeOutra = normalizar(e.pessoas[outra(dono)] && e.pessoas[outra(dono)].nomeBanco);
+  if (nomeOutra && contemTermo(d, nomeOutra) &&
+      /transf|pix|ted|doc/.test(d)) cat = "entre";
+
+  if (!cat) {
+    var melhor = null;
+    e.regras.forEach(function (r) {
+      var t = normalizar(r.termo);
+      if (t && contemTermo(d, t) && (!melhor || t.length > melhor.t.length)) melhor = { t: t, r: r };
+    });
+    if (melhor && categoria(e, melhor.r.categoria)) { cat = melhor.r.categoria; div = melhor.r.divisao || ""; }
+  }
+
+  if (!cat && dicaPluggy) {
+    var h = normalizar(dicaPluggy);
+    for (var i = 0; i < MAPA_PLUGGY.length; i++) {
+      if (h.indexOf(MAPA_PLUGGY[i][0]) !== -1) { cat = MAPA_PLUGGY[i][1]; break; }
+    }
+  }
+
+  if (!cat && valor < 0) cat = tipoDaConta(contaId) === "cartao" ? "outros" : "entradas";
+  if (!cat) cat = "outros";
+
+  if (!div) {
+    var c = categoria(e, cat);
+    div = c && c.casal ? "casal" : "pessoal";
+  }
+  return { categoria: cat, divisao: div };
+}
+
+/* Põe as transações lidas de um arquivo dentro do estado, sem duplicar.
+   Linhas idênticas no mesmo arquivo (dois cafés iguais no mesmo dia) viram
+   ids diferentes pela ordem de aparição - e reimportar o arquivo dá os
+   mesmos ids de novo. */
+function importar(e, contaId, itens, origem) {
+  var existentes = {};
+  e.transacoes.forEach(function (t) { existentes[t.id] = true; });
+  Object.keys(e.apagadas || {}).forEach(function (id) { existentes[id] = true; });
+  var vistos = {}, novas = 0, repetidas = 0, agora = Date.now();
+  itens.forEach(function (it) {
+    var id;
+    if (it.id) id = it.id;
+    else if (it.idExterno) id = hash(contaId + "|" + it.idExterno);
+    else {
+      var chave = contaId + "|" + it.data + "|" + normalizar(it.descricao) + "|" + it.valor.toFixed(2);
+      vistos[chave] = (vistos[chave] || 0) + 1;
+      id = hash(chave + "|" + vistos[chave]);
+    }
+    if (existentes[id]) { repetidas++; return; }
+    existentes[id] = true;
+    var c = categorizar(e, it.descricao, it.valor, contaId, it.dica);
+    e.transacoes.push({
+      id: id, conta: contaId, data: it.data, descricao: it.descricao,
+      valor: arred(it.valor), categoria: c.categoria, divisao: c.divisao, origem: origem,
+      alterado: agora
+    });
+    novas++;
+  });
+  e.transacoes.sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; });
+  return { novas: novas, repetidas: repetidas };
+}
+
+/* Os dados do financas_pluggy.py: window.FINANCAS_PLUGGY */
+function importarPluggy(e, dados) {
+  if (!dados || !Array.isArray(dados.transacoes)) return { novas: 0, repetidas: 0 };
+  var porConta = {};
+  dados.transacoes.forEach(function (t) {
+    if (PESSOAS.indexOf(t.pessoa) === -1) return;
+    var conta = t.pessoa + "-" + (t.tipo === "cartao" ? "cartao" : "conta");
+    (porConta[conta] = porConta[conta] || []).push({
+      id: "pg-" + t.id, data: t.data, descricao: t.descricao, valor: Number(t.valor), dica: t.categoriaPluggy
+    });
+  });
+  var tot = { novas: 0, repetidas: 0 };
+  Object.keys(porConta).forEach(function (conta) {
+    var r = importar(e, conta, porConta[conta], "pluggy");
+    tot.novas += r.novas; tot.repetidas += r.repetidas;
+  });
+  e.pluggy.geradoEm = dados.geradoEm || null;
+  return tot;
+}
+
+/* Reaplica as regras nas transações que ninguém editou à mão. */
+function reaplicarRegras(e) {
+  var mudou = 0;
+  e.transacoes.forEach(function (t) {
+    if (t.manual) return;
+    var c = categorizar(e, t.descricao, t.valor, t.conta, null);
+    if (t.origem === "pluggy" && c.categoria === "outros") return; // mantém a dica do Pluggy
+    if (c.categoria !== t.categoria || c.divisao !== t.divisao) {
+      t.categoria = c.categoria; t.divisao = c.divisao; t.alterado = Date.now(); mudou++;
+    }
+  });
+  return mudou;
+}
+
+/* Junta outro estado a este: o backup de outro aparelho ou o que veio da
+   nuvem. É o que deixa os dois mexerem ao mesmo tempo sem um apagar o do
+   outro:
+   - transação: vale a versão editada por último (campo "alterado");
+   - transação apagada em qualquer lado fica apagada nos dois;
+   - nomes, categorias, regras e divisão andam juntos: vale o bloco
+     mexido por último (configAlterada).
+   Devolve quantas transações novas chegaram. */
+function mesclar(e, outro) {
+  outro = completar(outro);
+  Object.keys(outro.apagadas).forEach(function (id) {
+    e.apagadas[id] = Math.max(e.apagadas[id] || 0, outro.apagadas[id] || 0);
+  });
+  var porId = {};
+  e.transacoes.forEach(function (t) { porId[t.id] = t; });
+  var novas = 0;
+  outro.transacoes.forEach(function (t) {
+    if (e.apagadas[t.id]) return;
+    var a = porId[t.id];
+    if (!a) { t = JSON.parse(JSON.stringify(t)); e.transacoes.push(t); porId[t.id] = t; novas++; return; }
+    var ta = t.alterado || 0, aa = a.alterado || 0;
+    if (ta > aa || (ta === aa && t.manual && !a.manual)) {
+      Object.keys(a).forEach(function (k) { delete a[k]; });
+      Object.assign(a, JSON.parse(JSON.stringify(t)));
+    }
+  });
+  e.transacoes = e.transacoes.filter(function (t) { return !e.apagadas[t.id]; });
+  if (outro.configAlterada > e.configAlterada) {
+    var copia = JSON.parse(JSON.stringify(outro));
+    e.pessoas = copia.pessoas; e.divisao = copia.divisao;
+    e.categorias = copia.categorias; e.regras = copia.regras;
+    e.configAlterada = copia.configAlterada;
+  }
+  if (outro.pluggy.geradoEm && (!e.pluggy.geradoEm || outro.pluggy.geradoEm > e.pluggy.geradoEm))
+    e.pluggy.geradoEm = outro.pluggy.geradoEm;
+  e.transacoes.sort(function (a, b) {
+    return a.data < b.data ? 1 : a.data > b.data ? -1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+  return novas;
+}
+
+function apagar(e, id) {
+  e.apagadas[id] = Date.now();
+  e.transacoes = e.transacoes.filter(function (t) { return t.id !== id; });
+}
+
+/* JSON com as chaves em ordem: dois estados iguais dão o mesmo texto, não
+   importa em que ordem cada aparelho montou os objetos. */
+function canonico(x) {
+  if (Array.isArray(x)) return "[" + x.map(canonico).join(",") + "]";
+  if (x && typeof x === "object") {
+    return "{" + Object.keys(x).sort().filter(function (k) { return x[k] !== undefined; })
+      .map(function (k) { return JSON.stringify(k) + ":" + canonico(x[k]); }).join(",") + "}";
+  }
+  return JSON.stringify(x);
+}
+
+/* ----------------------------------------------------- nuvem (cifrada) */
+
+/* A senha do casal vira DUAS coisas, pelo PBKDF2: a chave AES que embaralha
+   os dados e o id do cofre no servidor. O servidor só vê o id e o texto
+   cifrado - sem a senha, não tem como ler nada. O sal é fixo porque a senha
+   é o único segredo e precisa dar o mesmo cofre nos dois celulares. */
+var SAL = "financas-do-casal/cofre/v1";
+var ITERACOES = 310000;
+var cripto = raiz.crypto && raiz.crypto.subtle;
+
+function paraB64(bytes) {
+  var s = "";
+  for (var i = 0; i < bytes.length; i += 0x8000)
+    s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+function deB64(t) {
+  var s = atob(t), b = new Uint8Array(s.length);
+  for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+  return b;
+}
+function limparSenha(senha) { return String(senha || "").normalize("NFC").trim(); }
+
+function derivarCofre(senha) {
+  var enc = new TextEncoder();
+  return cripto.importKey("raw", enc.encode(limparSenha(senha)), "PBKDF2", false, ["deriveBits"])
+    .then(function (base) {
+      return cripto.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: enc.encode(SAL), iterations: ITERACOES }, base, 512);
+    })
+    .then(function (bits) {
+      var b = new Uint8Array(bits);
+      var id = Array.prototype.map.call(b.subarray(32), function (x) { return ("0" + x.toString(16)).slice(-2); }).join("");
+      return { id: id, chave: paraB64(b.subarray(0, 32)) };
+    });
+}
+function chaveAES(chaveB64) {
+  return cripto.importKey("raw", deB64(chaveB64), "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+function passarPor(bytes, fluxo) {
+  return new Response(new Blob([bytes]).stream().pipeThrough(fluxo)).arrayBuffer()
+    .then(function (b) { return new Uint8Array(b); });
+}
+function cifrar(chaveB64, objeto) {
+  var bruto = new TextEncoder().encode(JSON.stringify(objeto));
+  var zip = typeof CompressionStream !== "undefined";
+  var iv = raiz.crypto.getRandomValues(new Uint8Array(12));
+  return (zip ? passarPor(bruto, new CompressionStream("gzip")) : Promise.resolve(bruto))
+    .then(function (dados) {
+      return chaveAES(chaveB64).then(function (k) { return cripto.encrypt({ name: "AES-GCM", iv: iv }, k, dados); });
+    })
+    .then(function (c) {
+      return JSON.stringify({ v: 1, z: zip, iv: paraB64(iv), d: paraB64(new Uint8Array(c)) });
+    });
+}
+function decifrar(chaveB64, texto) {
+  var env = JSON.parse(texto);
+  return chaveAES(chaveB64)
+    .then(function (k) { return cripto.decrypt({ name: "AES-GCM", iv: deB64(env.iv) }, k, deB64(env.d)); })
+    .then(function (b) {
+      b = new Uint8Array(b);
+      return env.z ? passarPor(b, new DecompressionStream("gzip")) : b;
+    })
+    .then(function (b) { return JSON.parse(new TextDecoder().decode(b)); });
+}
+
+/* Senha aleatória fácil de ditar: 4 grupos de 4, sem 0/o/1/l/i (~79 bits). */
+function gerarSenha() {
+  var letras = "abcdefghjkmnpqrstuvwxyz23456789";
+  var b = raiz.crypto.getRandomValues(new Uint8Array(16)), s = "";
+  for (var i = 0; i < 16; i++) {
+    if (i && i % 4 === 0) s += "-";
+    s += letras[b[i] % letras.length];
+  }
+  return s;
+}
+
+/* ---------------------------------------------------------------- contas */
+
+/* Quanto uma pessoa deve à outra pelas despesas do casal, já descontadas as
+   transferências entre vocês. mes = "AAAA-MM" ou null para tudo.
+   Resultado: saldo > 0 -> p2 deve a p1; saldo < 0 -> p1 deve a p2. */
+function acerto(e, mes) {
+  var noPeriodo = e.transacoes.filter(function (t) { return !mes || mesDe(t.data) === mes; });
+  var pagoPor = { p1: 0, p2: 0 };
+  var saldo = 0;
+  noPeriodo.forEach(function (t) {
+    if (!ehGasto(t) || t.divisao !== "casal") return;
+    var p = pessoaDaConta(t.conta);
+    pagoPor[p] += t.valor;
+    var parteDaOutra = t.valor * pct(e, outra(p));
+    saldo += p === "p1" ? parteDaOutra : -parteDaOutra;
+  });
+
+  /* Transferências: conta o lado que SAIU (valor > 0). O lado que ENTROU só
+     conta se a saída correspondente não estiver importada (mesmo valor, até
+     3 dias de diferença) - senão o mesmo Pix seria contado duas vezes. */
+  var entre = noPeriodo.filter(function (t) { return t.categoria === "entre"; });
+  var saidas = entre.filter(function (t) { return t.valor > 0; });
+  var transf = { p1: 0, p2: 0 };    // quanto cada um mandou para o outro
+  var usadas = {};
+  saidas.forEach(function (t) { transf[pessoaDaConta(t.conta)] += t.valor; });
+  entre.filter(function (t) { return t.valor < 0; }).forEach(function (t) {
+    var recebeu = pessoaDaConta(t.conta), mandou = outra(recebeu);
+    var par = saidas.filter(function (s) {
+      return !usadas[s.id] && pessoaDaConta(s.conta) === mandou &&
+        Math.abs(s.valor + t.valor) < 0.005 &&
+        Math.abs(new Date(s.data) - new Date(t.data)) <= 3 * 86400000;
+    })[0];
+    if (par) usadas[par.id] = true;
+    else transf[mandou] += -t.valor;
+  });
+  saldo += transf.p1 - transf.p2;
+
+  return {
+    saldo: arred(saldo),
+    pagoPor: { p1: arred(pagoPor.p1), p2: arred(pagoPor.p2) },
+    totalCasal: arred(pagoPor.p1 + pagoPor.p2),
+    transferencias: { p1: arred(transf.p1), p2: arred(transf.p2) }
+  };
+}
+
+function resumoMes(e, mes) {
+  var doMes = e.transacoes.filter(function (t) { return mesDe(t.data) === mes; });
+  var gastos = doMes.filter(ehGasto);
+  var r = {
+    total: 0,
+    pagou: { p1: 0, p2: 0 },
+    custo: { p1: 0, p2: 0 },          // o que é de cada um de verdade: pessoal + sua parte do casal
+    pessoal: { p1: 0, p2: 0 },
+    casal: 0,
+    entradas: { p1: 0, p2: 0 },
+    categorias: [],
+    maiores: [],
+    quantidade: doMes.length
+  };
+  var porCat = {};
+  gastos.forEach(function (t) {
+    var p = pessoaDaConta(t.conta);
+    r.total += t.valor;
+    r.pagou[p] += t.valor;
+    if (t.divisao === "casal") {
+      r.casal += t.valor;
+      r.custo.p1 += t.valor * pct(e, "p1");
+      r.custo.p2 += t.valor * pct(e, "p2");
+    } else {
+      r.pessoal[p] += t.valor;
+      r.custo[p] += t.valor;
+    }
+    var c = porCat[t.categoria] = porCat[t.categoria] || { id: t.categoria, total: 0, p1: 0, p2: 0 };
+    c.total += t.valor; c[p] += t.valor;
+  });
+  doMes.forEach(function (t) {
+    if (t.categoria === "entradas" && t.valor < 0) r.entradas[pessoaDaConta(t.conta)] += -t.valor;
+  });
+  e.categorias.forEach(function (c) {
+    if (ESPECIAIS[c.id]) return;
+    var x = porCat[c.id];
+    if (x || c.orcamento > 0) {
+      r.categorias.push({
+        id: c.id, nome: c.nome, orcamento: Number(c.orcamento) || 0,
+        total: arred(x ? x.total : 0), p1: arred(x ? x.p1 : 0), p2: arred(x ? x.p2 : 0)
+      });
+    }
+  });
+  r.categorias.sort(function (a, b) { return b.total - a.total; });
+  r.maiores = gastos.slice().sort(function (a, b) { return b.valor - a.valor; }).slice(0, 8);
+  ["total", "casal"].forEach(function (k) { r[k] = arred(r[k]); });
+  ["pagou", "custo", "pessoal", "entradas"].forEach(function (k) {
+    r[k].p1 = arred(r[k].p1); r[k].p2 = arred(r[k].p2);
+  });
+  r.acerto = acerto(e, mes);
+  return r;
+}
+
+function somarMes(mes, delta) {
+  var a = Number(mes.slice(0, 4)), m = Number(mes.slice(5, 7)) - 1 + delta;
+  a += Math.floor(m / 12); m = ((m % 12) + 12) % 12;
+  return a + "-" + ("0" + (m + 1)).slice(-2);
+}
+
+function serieMeses(e, mesFim, n) {
+  var out = [];
+  for (var i = n - 1; i >= 0; i--) {
+    var mes = somarMes(mesFim, -i);
+    var x = { mes: mes, p1: 0, p2: 0, total: 0 };
+    e.transacoes.forEach(function (t) {
+      if (mesDe(t.data) !== mes || !ehGasto(t)) return;
+      x[pessoaDaConta(t.conta)] += t.valor; x.total += t.valor;
+    });
+    x.p1 = arred(x.p1); x.p2 = arred(x.p2); x.total = arred(x.total);
+    out.push(x);
+  }
+  return out;
+}
+
+/* Um termo razoável para virar regra a partir de uma descrição:
+   "Compra no débito - PADARIA REAL 123" -> "padaria real" */
+function sugerirTermo(descricao) {
+  var d = normalizar(descricao)
+    .replace(/^(compra no debito|compra no credito|transferencia enviada pelo pix|transferencia enviada|pagamento de boleto efetuado|pagamento efetuado|debito automatico|pix enviado)\s*/, "")
+    .replace(/\bparcela\s+\d+\s+\d+\b/, "")
+    .replace(/\b\d+\b/g, " ")
+    .replace(/\s+/g, " ").trim();
+  var palavras = d.split(" ").filter(function (w) { return w.length >= 2; });
+  return palavras.slice(0, 2).join(" ");
+}
+
+/* Só para mostrar: tira o prefixo e o CPF/banco que o extrato põe.
+   "Transferência enviada pelo Pix - FULANO - •••.123 - BANCO" -> "Pix para FULANO" */
+function descricaoCurta(descricao) {
+  var d = String(descricao || "");
+  var m = /^(transfer[êe]ncia (enviada|recebida) pelo pix|pagamento de boleto efetuado|compra no d[ée]bito|compra no cr[ée]dito)\s+-\s+(.+)$/i.exec(d);
+  if (!m) return d;
+  if (!m[2]) return m[3];
+  return (/recebida/i.test(m[2]) ? "Pix de " : "Pix para ") + m[3].split(" - ")[0];
+}
+
+var Nucleo = {
+  PESSOAS: PESSOAS, TIPOS_CONTA: TIPOS_CONTA, ESPECIAIS: ESPECIAIS,
+  normalizar: normalizar, contemTermo: contemTermo, hash: hash, lerValor: lerValor, lerData: lerData,
+  lerCSV: lerCSV, detectarFormato: detectarFormato, lerArquivo: lerArquivo,
+  estadoPadrao: estadoPadrao, completar: completar, categorizar: categorizar,
+  importar: importar, importarPluggy: importarPluggy, reaplicarRegras: reaplicarRegras, mesclar: mesclar,
+  apagar: apagar, canonico: canonico, derivarCofre: derivarCofre, cifrar: cifrar, decifrar: decifrar,
+  gerarSenha: gerarSenha, limparSenha: limparSenha,
+  pessoaDaConta: pessoaDaConta, tipoDaConta: tipoDaConta, outra: outra, mesDe: mesDe, categoria: categoria,
+  ehGasto: ehGasto, pct: pct, acerto: acerto, resumoMes: resumoMes, somarMes: somarMes,
+  serieMeses: serieMeses, sugerirTermo: sugerirTermo, descricaoCurta: descricaoCurta, arred: arred
+};
+if (typeof module !== "undefined" && module.exports) module.exports = Nucleo;
+raiz.Nucleo = Nucleo;
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+
+<!-- ======================================================================
+     TELA
+     ====================================================================== -->
+<script>
+(function () {
+"use strict";
+var N = window.Nucleo;
+var CHAVE = "financas-casal-v1";
+var MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
+             "agosto", "setembro", "outubro", "novembro", "dezembro"];
+var MESES_CURTOS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+var estado = carregar();
+var hoje = new Date();
+var mesAtual = hoje.getFullYear() + "-" + ("0" + (hoje.getMonth() + 1)).slice(-2);
+var filtro = { busca: "", pessoa: "", categoria: "", divisao: "", todos: false };
+var pessoaImport = lerPrefs().eu || "p1";
+
+/* ---------------------------------------------------------- persistência */
+function carregar() {
+  try {
+    var s = localStorage.getItem(CHAVE);
+    if (s) return N.completar(JSON.parse(s));
+  } catch (err) { console.warn("Não deu para ler os dados salvos", err); }
+  return N.estadoPadrao();
+}
+function gravarLocal() {
+  try { localStorage.setItem(CHAVE, JSON.stringify(estado)); }
+  catch (err) { brinde("Não consegui salvar neste navegador. Exporte um backup em Configurar."); }
+}
+/* Toda mudança passa por aqui: grava no aparelho e agenda a nuvem. */
+function salvar() {
+  gravarLocal();
+  if (nuvem.id) {
+    nuvem.pendente = true;
+    if (sincronizando) editouDurante = true;
+    gravarNuvem();
+    agendarNuvem();
+  }
+}
+/* Mudança de nome, categoria, regra ou divisão: o bloco inteiro ganha
+   carimbo novo, e é ele que vale quando os dois aparelhos se juntam. */
+function salvarConfig() {
+  estado.configAlterada = Date.now();
+  salvar();
+}
+/* Coisas só deste aparelho (quem está usando), fora do que sincroniza. */
+function lerPrefs() {
+  try { return JSON.parse(localStorage.getItem(CHAVE + "-aparelho")) || {}; } catch (err) { return {}; }
+}
+function gravarPrefs(p) {
+  try { localStorage.setItem(CHAVE + "-aparelho", JSON.stringify(Object.assign(lerPrefs(), p))); } catch (err) { /* sem problema */ }
+}
+
+/* ================================================================ NUVEM
+   Os dois veem e editam o mesmo cofre, cada um do seu celular. O que vai
+   para o servidor sai daqui cifrado com a chave da senha do casal.
+
+   Uma rodada: baixa o cofre (só se mudou), junta com o que está aqui
+   (N.mesclar), e se o resultado for diferente do que está lá, envia. Se o
+   outro gravou no meio, o servidor responde 409 e a rodada recomeça. */
+var CHAVE_NUVEM = CHAVE + "-nuvem";
+var nuvem = lerNuvem();      // { servidor, id, chave, versao, pendente, quando, senha }
+var nuvemStatus = nuvem.id ? "indo" : "off", nuvemErro = "";
+var sincronizando = false, editouDurante = false, timerNuvem = null;
+
+function lerNuvem() {
+  try { return JSON.parse(localStorage.getItem(CHAVE_NUVEM)) || {}; } catch (err) { return {}; }
+}
+function gravarNuvem() {
+  try { localStorage.setItem(CHAVE_NUVEM, JSON.stringify(nuvem)); } catch (err) { /* tenta na próxima */ }
+}
+function servidorPadrao() { return /^https?:$/.test(location.protocol) ? location.origin : ""; }
+function baseServidor() { return (nuvem.servidor || servidorPadrao()).replace(/\/+$/, ""); }
+function urlCofre(id) { return baseServidor() + "/api/cofre/" + (id || nuvem.id); }
+function agendarNuvem(ms) {
+  if (!nuvem.id) return;
+  clearTimeout(timerNuvem);
+  timerNuvem = setTimeout(sincronizar, ms == null ? 1500 : ms);
+}
+function erroServidor(r) {
+  return r.json().catch(function () { return {}; }).then(function (j) {
+    throw new Error(j.erro || "o servidor respondeu " + r.status);
+  });
+}
+
+function sincronizar() {
+  if (!nuvem.id) return Promise.resolve();
+  if (sincronizando) { editouDurante = true; return Promise.resolve(); }
+  sincronizando = true; editouDurante = false;
+  clearTimeout(timerNuvem);
+  mostrarNuvem("indo");
+  var tentativas = 0, mudouTela = false;
+
+  function rodada() {
+    tentativas++;
+    return fetch(urlCofre() + "?versao=" + (nuvem.versao || 0), { cache: "no-store" })
+      .then(function (r) {
+        if (r.status === 404) return { versao: 0 };
+        if (!r.ok) return erroServidor(r);
+        return r.json();
+      })
+      .then(function (j) {
+        if (!j.dados) return { versao: j.versao || 0, remoto: null };
+        return N.decifrar(nuvem.chave, j.dados).then(
+          function (rem) { return { versao: j.versao, remoto: rem }; },
+          function () { throw new Error("não consegui abrir o cofre — a senha é a mesma do outro aparelho?"); });
+      })
+      .then(function (x) {
+        if (x.remoto) {
+          var antes = N.canonico(estado);
+          N.mesclar(estado, x.remoto);
+          if (N.canonico(estado) !== antes) { gravarLocal(); mudouTela = true; }
+        }
+        var precisa = nuvem.pendente || x.versao === 0 ||
+          (x.remoto && N.canonico(estado) !== N.canonico(N.completar(x.remoto)));
+        if (!precisa) { nuvem.versao = x.versao; return; }
+        return N.cifrar(nuvem.chave, estado).then(function (dados) {
+          return fetch(urlCofre(), {
+            method: "PUT", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ versaoAnterior: x.versao, dados: dados })
+          });
+        }).then(function (r) {
+          if (r.status === 409 && tentativas < 5) return rodada();
+          if (!r.ok) return erroServidor(r);
+          return r.json().then(function (j) {
+            nuvem.versao = j.versao;
+            nuvem.pendente = editouDurante;   // mexeram no meio: sobe de novo na próxima
+          });
+        });
+      });
+  }
+
+  return rodada().then(function () {
+    nuvem.quando = Date.now();
+    gravarNuvem();
+    nuvemErro = "";
+    mostrarNuvem("ok");
+    if (mudouTela) desenhar();
+  }, function (err) {
+    nuvemErro = err && err.message || String(err);
+    gravarNuvem();
+    mostrarNuvem(err instanceof TypeError || navigator.onLine === false ? "offline" : "erro");
+    agendarNuvem(30000);
+  }).then(function () {
+    sincronizando = false;
+    if (editouDurante) agendarNuvem(300);
+  });
+}
+
+function mostrarNuvem(st) {
+  nuvemStatus = st;
+  var ind = $("#nuvem-ind");
+  ind.hidden = !nuvem.id;
+  ind.className = "nuvem-ind" + (st === "erro" ? " erro" : "");
+  ind.textContent = { indo: "sincronizando…", ok: "✓ sincronizado", offline: "sem internet", erro: "⚠ sincronização", off: "" }[st] || "";
+  ind.title = nuvemErro || "";
+  var el = $("#nuvem-status");
+  if (el) el.innerHTML = textoNuvem();
+}
+function textoNuvem() {
+  if (nuvemStatus === "indo") return "Sincronizando…";
+  if (nuvemStatus === "offline") return "Sem conexão. As mudanças ficam guardadas aqui e sobem quando a internet voltar.";
+  if (nuvemStatus === "erro") return '<span style="color:var(--ruim)">⚠ ' + esc(nuvemErro) + "</span>";
+  return "✓ Sincronizado" + (nuvem.quando ? " às " + new Date(nuvem.quando).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "") + ".";
+}
+
+function conectar(senha, servidor) {
+  senha = N.limparSenha(senha);
+  servidor = (servidor || "").trim().replace(/\/+$/, "");
+  if (senha.length < 12) { brinde("A senha do casal precisa de pelo menos 12 caracteres. Use “Gerar”."); return Promise.resolve(); }
+  if (!servidor && !servidorPadrao()) { brinde("Informe o endereço do servidor (o do Worker publicado)."); return Promise.resolve(); }
+  if (!window.crypto || !crypto.subtle) { brinde("Este navegador não tem criptografia disponível: abra pelo endereço https."); return Promise.resolve(); }
+  brinde("Abrindo o cofre…", 8000);
+  var base = servidor || servidorPadrao();
+  return N.derivarCofre(senha).then(function (c) {
+    return fetch(base + "/api/cofre/" + c.id + "?versao=-1", { cache: "no-store" }).then(function (r) {
+      if (r.status === 404 && !confirm("Ainda não existe cofre com essa senha.\n\nSe é a primeira vez de vocês, OK cria um novo.\nSe a outra pessoa já conectou, cancele e confira a senha.")) {
+        throw new Error("cancelado");
+      }
+      if (r.status !== 404 && !r.ok) return erroServidor(r);
+      nuvem = {
+        servidor: servidor, id: c.id, chave: c.chave, versao: 0, senha: senha,
+        pendente: estado.transacoes.length > 0 || estado.configAlterada > 0
+      };
+      gravarNuvem();
+      return sincronizar();
+    });
+  }).then(function () {
+    if (nuvem.id && nuvemStatus === "ok") brinde("Conectado: este aparelho agora vê o mesmo que o outro.");
+    desenhar();
+  }).catch(function (err) {
+    if (err.message !== "cancelado") brinde("Não deu para conectar: " + (err.message || err));
+  });
+}
+
+function linkConvite() {
+  return (baseServidor() || servidorPadrao()) + "/#cofre=" + encodeURIComponent(nuvem.senha || "");
+}
+
+/* --------------------------------------------------------------- formato */
+var fmtBRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+function brl(v) { return fmtBRL.format(v || 0); }
+function brlCurto(v) {
+  if (Math.abs(v) >= 1000) return "R$ " + (v / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mil";
+  return "R$ " + Math.round(v).toLocaleString("pt-BR");
+}
+function dataBR(d) { return d.slice(8, 10) + "/" + d.slice(5, 7); }
+function nomeMes(m) { return MESES[Number(m.slice(5, 7)) - 1] + " de " + m.slice(0, 4); }
+function nome(p) { return estado.pessoas[p].nome || (p === "p1" ? "Pessoa 1" : "Pessoa 2"); }
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+function $(sel, raiz) { return (raiz || document).querySelector(sel); }
+function $$(sel, raiz) { return Array.prototype.slice.call((raiz || document).querySelectorAll(sel)); }
+function bolinha(p) { return '<span class="bolinha b-' + p + '"></span>'; }
+
+/* ------------------------------------------------------------------ abas */
+var abaAtiva = "resumo";
+$$(".aba").forEach(function (b) {
+  b.addEventListener("click", function () { trocarAba(b.dataset.aba); });
+});
+function trocarAba(a) {
+  abaAtiva = a;
+  $$(".aba").forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.aba === a)); });
+  $$(".painel").forEach(function (p) { p.classList.toggle("ativo", p.id === "painel-" + a); });
+  $(".mes-nav").style.display = (a === "resumo" || a === "transacoes") ? "" : "none";
+  desenhar();
+}
+$("#mes-ant").addEventListener("click", function () { mesAtual = N.somarMes(mesAtual, -1); desenhar(); });
+$("#mes-prox").addEventListener("click", function () { mesAtual = N.somarMes(mesAtual, 1); desenhar(); });
+
+function desenhar() {
+  $("#mes-nome").textContent = nomeMes(mesAtual);
+  if (abaAtiva === "resumo") desenharResumo();
+  else if (abaAtiva === "transacoes") desenharTransacoes();
+  else if (abaAtiva === "importar") desenharImportar();
+  else desenharConfig();
+}
+
+/* ------------------------------------------------------------------ dica */
+var dica = $("#dica");
+document.addEventListener("mousemove", function (ev) {
+  var alvo = ev.target.closest && ev.target.closest("[data-dica]");
+  if (!alvo) { dica.style.display = "none"; return; }
+  dica.textContent = alvo.dataset.dica;
+  dica.style.display = "block";
+  var w = dica.offsetWidth, h = dica.offsetHeight;
+  var x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + w > window.innerWidth - 8) x = ev.clientX - w - 14;
+  if (y + h > window.innerHeight - 8) y = ev.clientY - h - 14;
+  dica.style.left = Math.max(8, x) + "px"; dica.style.top = Math.max(8, y) + "px";
+});
+
+/* ---------------------------------------------------------------- brinde */
+var brindeTimer;
+function brinde(html, ms) {
+  var b = $("#brinde");
+  b.innerHTML = typeof html === "string" ? esc(html) : "";
+  if (typeof html !== "string") b.appendChild(html);
+  b.style.display = "flex";
+  clearTimeout(brindeTimer);
+  brindeTimer = setTimeout(function () { b.style.display = "none"; }, ms || 3500);
+}
+
+/* ================================================================ RESUMO */
+function desenharResumo() {
+  var el = $("#painel-resumo");
+  if (!estado.transacoes.length) {
+    el.innerHTML = '<div class="cartao vazio"><strong>Nenhuma transação ainda</strong>' +
+      'Comece pela aba <a href="#" data-ir="importar">Importar</a>: é só arrastar o CSV ou OFX ' +
+      'que o app do Nubank exporta, de cada um de vocês.<br><br>' +
+      'Antes, vale dar nome às duas pessoas em <a href="#" data-ir="config">Configurar</a>.<br><br>' +
+      (nuvem.id ? "" : 'Se a outra pessoa já começou, peça o link de convite — ou conecte este aparelho em <a href="#" data-ir="config">Configurar</a> com a senha do casal.') +
+      "</div>";
+    ligarLinks(el);
+    return;
+  }
+  var r = N.resumoMes(estado, mesAtual);
+  var ant = N.resumoMes(estado, N.somarMes(mesAtual, -1));
+  var serie = N.serieMeses(estado, mesAtual, 6);
+  var acTudo = N.acerto(estado, null);
+
+  var delta = "";
+  if (ant.total > 0) {
+    var dp = (r.total - ant.total) / ant.total * 100;
+    delta = '<span class="' + (dp > 0 ? "delta-sobe" : "delta-desce") + '">' +
+      (dp > 0 ? "▲ " : "▼ ") + Math.abs(dp).toFixed(0) + "%</span> vs. " + MESES[Number(N.somarMes(mesAtual, -1).slice(5, 7)) - 1];
+  }
+
+  var h = '<div class="grade grade-kpi">';
+  h += kpi("Gastos do mês", brl(r.total), (delta || "sem mês anterior para comparar"));
+  h += kpi("Despesas do casal", brl(r.casal),
+    Math.round(N.pct(estado, "p1") * 100) + "% " + esc(nome("p1")) + " · " + Math.round(N.pct(estado, "p2") * 100) + "% " + esc(nome("p2")));
+  ["p1", "p2"].forEach(function (p) {
+    h += kpi(bolinha(p) + esc(nome(p)), brl(r.custo[p]),
+      "pessoal " + brl(r.pessoal[p]) + " + parte do casal " + brl(r.custo[p] - r.pessoal[p]) +
+      "<br>saiu da conta/cartão: " + brl(r.pagou[p]) +
+      (r.entradas[p] ? '<br><span class="delta-desce">entrou ' + brl(r.entradas[p]) + "</span>" : ""));
+  });
+  h += "</div>";
+
+  h += '<div class="grade grade-2">';
+
+  /* Categorias */
+  h += '<div class="cartao"><h2>Por categoria</h2>' + legenda("quem pagou");
+  if (!r.categorias.length) h += '<p class="sub">Nada gasto neste mês.</p>';
+  var maxCat = 0;
+  r.categorias.forEach(function (c) { maxCat = Math.max(maxCat, c.total, c.orcamento); });
+  r.categorias.forEach(function (c) {
+    var w1 = maxCat ? c.p1 / maxCat * 100 : 0, w2 = maxCat ? c.p2 / maxCat * 100 : 0;
+    var d = c.nome + "\n" + nome("p1") + ": " + brl(c.p1) + "\n" + nome("p2") + ": " + brl(c.p2) +
+      (c.orcamento ? "\nOrçamento: " + brl(c.orcamento) : "");
+    h += '<div class="cat-linha" data-dica="' + esc(d) + '">' +
+      '<div class="cat-nome">' + esc(c.nome) + "</div>" +
+      '<div class="cat-trilho"><div class="cat-barra">' +
+      (c.p1 > 0 ? '<div class="b-p1" style="width:' + w1 + '%"></div>' : "") +
+      (c.p2 > 0 ? '<div class="b-p2" style="width:' + w2 + '%"></div>' : "") +
+      "</div>" +
+      (c.orcamento ? '<div class="cat-meta" style="left:' + (c.orcamento / maxCat * 100) + '%"></div>' : "") +
+      "</div>" +
+      '<div class="cat-valor">' + brl(c.total) + "</div>";
+    if (c.orcamento) {
+      var p = c.total / c.orcamento * 100, acima = c.total > c.orcamento;
+      h += '<div class="cat-orc' + (acima ? " acima" : "") + '">' +
+        (acima ? "⚠ " + brl(c.total - c.orcamento) + " acima do orçamento de " + brl(c.orcamento)
+               : Math.round(p) + "% do orçamento de " + brl(c.orcamento) + " · sobram " + brl(c.orcamento - c.total)) +
+        "</div>";
+    }
+    h += "</div>";
+  });
+  h += "</div>";
+
+  /* Coluna da direita: acerto + meses */
+  h += "<div>";
+  h += '<div class="cartao"><h2>Acerto entre vocês</h2>';
+  h += '<div class="acerto">' + fraseAcerto(acTudo.saldo) + "</div>";
+  h += '<p class="sub" style="margin:0 0 8px">Somando todas as despesas do casal importadas, já descontados os Pix entre vocês.</p>';
+  h += '<ul class="lista-simples">';
+  h += "<li><span>Neste mês: despesas do casal pagas por " + esc(nome("p1")) + '</span><span class="num">' + brl(r.acerto.pagoPor.p1) + "</span></li>";
+  h += "<li><span>Neste mês: despesas do casal pagas por " + esc(nome("p2")) + '</span><span class="num">' + brl(r.acerto.pagoPor.p2) + "</span></li>";
+  if (r.acerto.transferencias.p1 || r.acerto.transferencias.p2) {
+    h += "<li><span>Neste mês: " + esc(nome("p1")) + " mandou para " + esc(nome("p2")) + '</span><span class="num">' + brl(r.acerto.transferencias.p1) + "</span></li>";
+    h += "<li><span>Neste mês: " + esc(nome("p2")) + " mandou para " + esc(nome("p1")) + '</span><span class="num">' + brl(r.acerto.transferencias.p2) + "</span></li>";
+  }
+  h += "<li><span>Só este mês</span><span class=\"num\">" + fraseAcerto(r.acerto.saldo, true) + "</span></li>";
+  h += "</ul></div>";
+
+  /* Últimos 6 meses */
+  var maxM = 0;
+  serie.forEach(function (m) { maxM = Math.max(maxM, m.total); });
+  h += '<div class="cartao"><h2>Últimos 6 meses</h2>' + legenda("quem pagou");
+  h += '<div class="colunas">';
+  serie.forEach(function (m) {
+    var d = nomeMes(m.mes) + "\nTotal: " + brl(m.total) + "\n" + nome("p1") + ": " + brl(m.p1) + "\n" + nome("p2") + ": " + brl(m.p2);
+    h += '<div class="coluna' + (m.mes === mesAtual ? " atual" : "") + '" data-dica="' + esc(d) + '">' +
+      (m.p1 > 0 ? '<div class="b-p1" style="height:' + (maxM ? m.p1 / maxM * 100 : 0) + '%"></div>' : "") +
+      (m.p2 > 0 ? '<div class="b-p2" style="height:' + (maxM ? m.p2 / maxM * 100 : 0) + '%"></div>' : "") +
+      "</div>";
+  });
+  h += '</div><div class="col-rotulos">';
+  serie.forEach(function (m) {
+    h += "<div>" + MESES_CURTOS[Number(m.mes.slice(5, 7)) - 1] + "<br>" + (m.total ? brlCurto(m.total) : "–") + "</div>";
+  });
+  h += "</div></div>";
+
+  /* Maiores gastos */
+  h += '<div class="cartao"><h2>Maiores gastos do mês</h2><ul class="lista-simples">';
+  r.maiores.forEach(function (t) {
+    var p = N.pessoaDaConta(t.conta);
+    h += '<li><span class="desc-curta" title="' + esc(t.descricao) + '">' + bolinha(p) + " " + esc(N.descricaoCurta(t.descricao)) +
+      ' <span class="mudo">· ' + dataBR(t.data) + '</span></span><span class="num">' + brl(t.valor) + "</span></li>";
+  });
+  if (!r.maiores.length) h += '<li class="sub">Nada neste mês.</li>';
+  h += "</ul></div>";
+  h += "</div></div>";
+
+  el.innerHTML = h;
+}
+
+function kpi(rotulo, valor, det) {
+  return '<div class="cartao kpi"><div class="rotulo">' + rotulo + '</div><div class="valor">' + valor +
+    '</div><div class="det">' + det + "</div></div>";
+}
+function legenda(sufixo) {
+  return '<div class="legenda"><span>' + bolinha("p1") + esc(nome("p1")) + "</span><span>" +
+    bolinha("p2") + esc(nome("p2")) + '</span><span class="mudo">(' + sufixo + ")</span></div>";
+}
+function fraseAcerto(saldo, curta) {
+  if (Math.abs(saldo) < 0.01) return curta ? "quites" : "Vocês estão quites ✓";
+  var deve = saldo > 0 ? "p2" : "p1", recebe = N.outra(deve);
+  return esc(nome(deve)) + " deve " + brl(Math.abs(saldo)) + " para " + esc(nome(recebe));
+}
+function ligarLinks(el) {
+  $$("[data-ir]", el).forEach(function (a) {
+    a.addEventListener("click", function (ev) { ev.preventDefault(); trocarAba(a.dataset.ir); });
+  });
+}
+
+/* ============================================================ TRANSAÇÕES */
+function desenharTransacoes() {
+  var el = $("#painel-transacoes");
+  var h = '<div class="cartao">';
+  h += '<div class="filtros">' +
+    '<input type="search" id="f-busca" placeholder="Buscar descrição…" value="' + esc(filtro.busca) + '">' +
+    '<select id="f-pessoa"><option value="">Os dois</option>' +
+    '<option value="p1">' + esc(nome("p1")) + '</option><option value="p2">' + esc(nome("p2")) + "</option></select>" +
+    '<select id="f-cat"><option value="">Todas as categorias</option>' + opcoesCategoria("") + "</select>" +
+    '<select id="f-div"><option value="">Pessoal e casal</option><option value="casal">Só do casal</option><option value="pessoal">Só pessoais</option></select>' +
+    '<label class="sub"><input type="checkbox" id="f-todos"' + (filtro.todos ? " checked" : "") + "> todos os meses</label>" +
+    '<button class="botao" id="nova-tx">+ Lançar à mão</button>' +
+    "</div>";
+  h += '<div id="form-nova"></div>';
+  h += '<div class="tx-cab"><div>Data</div><div>Descrição</div><div>Quem</div><div>Categoria</div><div>Divisão</div><div style="text-align:right">Valor</div><div></div></div>';
+  h += '<div id="lista-tx"></div>';
+  h += "</div>";
+  el.innerHTML = h;
+
+  $("#f-pessoa").value = filtro.pessoa;
+  $("#f-cat").value = filtro.categoria;
+  $("#f-div").value = filtro.divisao;
+  $("#f-busca").addEventListener("input", function () { filtro.busca = this.value; desenharLista(); });
+  $("#f-pessoa").addEventListener("change", function () { filtro.pessoa = this.value; desenharLista(); });
+  $("#f-cat").addEventListener("change", function () { filtro.categoria = this.value; desenharLista(); });
+  $("#f-div").addEventListener("change", function () { filtro.divisao = this.value; desenharLista(); });
+  $("#f-todos").addEventListener("change", function () { filtro.todos = this.checked; desenharLista(); });
+  $("#nova-tx").addEventListener("click", formNova);
+  desenharLista();
+}
+
+function opcoesCategoria(sel) {
+  return estado.categorias.map(function (c) {
+    return '<option value="' + esc(c.id) + '"' + (c.id === sel ? " selected" : "") + ">" + esc(c.nome) + "</option>";
+  }).join("");
+}
+
+function desenharLista() {
+  var busca = N.normalizar(filtro.busca);
+  var lista = estado.transacoes.filter(function (t) {
+    if (!filtro.todos && N.mesDe(t.data) !== mesAtual) return false;
+    if (filtro.pessoa && N.pessoaDaConta(t.conta) !== filtro.pessoa) return false;
+    if (filtro.categoria && t.categoria !== filtro.categoria) return false;
+    if (filtro.divisao && (t.divisao !== filtro.divisao || !N.ehGasto(t))) return false;
+    if (busca && N.normalizar(t.descricao).indexOf(busca) === -1) return false;
+    return true;
+  });
+  var LIMITE = 500;
+  var h = "", soma = 0;
+  lista.forEach(function (t) { if (N.ehGasto(t)) soma += t.valor; });
+  lista.slice(0, LIMITE).forEach(function (t) {
+    var p = N.pessoaDaConta(t.conta), gasto = N.ehGasto(t);
+    var cls = !gasto ? (t.categoria === "entradas" ? "entrada" : "fora") : "";
+    h += '<div class="tx" data-id="' + esc(t.id) + '">' +
+      "<div>" + dataBR(t.data) + (filtro.todos ? "/" + t.data.slice(2, 4) : "") + "</div>" +
+      '<div class="tx-desc" title="' + esc(t.descricao) + '">' + esc(N.descricaoCurta(t.descricao)) + "</div>" +
+      '<div class="quem">' + bolinha(p) + esc(nome(p)) + " · " + esc(N.TIPOS_CONTA[N.tipoDaConta(t.conta)] || "") + "</div>" +
+      '<div><select data-campo="categoria" aria-label="Categoria">' + opcoesCategoria(t.categoria) + "</select></div>" +
+      "<div>" + (gasto
+        ? '<select data-campo="divisao" aria-label="Divisão"><option value="pessoal"' + (t.divisao === "pessoal" ? " selected" : "") + ">Só de " + esc(nome(p)) + '</option><option value="casal"' + (t.divisao === "casal" ? " selected" : "") + ">Do casal</option></select>"
+        : '<span class="mudo" style="font-size:13px">fora da conta</span>') + "</div>" +
+      '<div class="valor ' + cls + '">' + (t.valor < 0 ? "+ " + brl(-t.valor) : brl(t.valor)) + "</div>" +
+      '<div><button class="botao-x" data-apagar aria-label="Apagar" title="Apagar">×</button></div>' +
+      "</div>";
+  });
+  if (!lista.length) h = '<div class="vazio">Nenhuma transação ' + (filtro.todos ? "com esses filtros." : "em " + nomeMes(mesAtual) + " com esses filtros.") + "</div>";
+  if (lista.length > LIMITE) h += '<div class="sub" style="padding:8px">Mostrando ' + LIMITE + " de " + lista.length + ". Use a busca ou os filtros para achar o resto.</div>";
+  h += '<div class="tx-total"><span>' + lista.length + " transaç" + (lista.length === 1 ? "ão" : "ões") + '</span><span>Gastos: ' + brl(soma) + "</span></div>";
+  var el = $("#lista-tx");
+  el.innerHTML = h;
+
+  $$("select[data-campo]", el).forEach(function (s) {
+    s.addEventListener("change", function () {
+      var id = s.closest(".tx").dataset.id;
+      var t = estado.transacoes.filter(function (x) { return x.id === id; })[0];
+      if (!t) return;
+      t[s.dataset.campo] = s.value;
+      if (s.dataset.campo === "categoria") {
+        var c = N.categoria(estado, s.value);
+        if (N.ehGasto(t) && !t.manualDivisao) t.divisao = c && c.casal ? "casal" : "pessoal";
+      } else t.manualDivisao = true;
+      t.manual = true;
+      t.alterado = Date.now();
+      salvar();
+      desenharLista();
+      if (s.dataset.campo === "categoria") oferecerRegra(t);
+    });
+  });
+  $$("[data-apagar]", el).forEach(function (b) {
+    b.addEventListener("click", function () {
+      var id = b.closest(".tx").dataset.id;
+      var t = estado.transacoes.filter(function (x) { return x.id === id; })[0];
+      if (!t || !confirm('Apagar "' + t.descricao + '" (' + brl(t.valor) + ")?\n\nEla some para os dois e não volta nem se o arquivo for importado de novo.")) return;
+      N.apagar(estado, id);
+      salvar(); desenharLista();
+    });
+  });
+}
+
+/* Depois de trocar a categoria de uma transação, propõe virar regra. */
+function oferecerRegra(t) {
+  var termo = N.sugerirTermo(t.descricao);
+  if (!termo) return;
+  var c = N.categoria(estado, t.categoria);
+  var caixa = document.createElement("span");
+  caixa.style.display = "contents";
+  caixa.innerHTML = '<span>Sempre que aparecer</span><input type="text" value="' + esc(termo) + '">' +
+    "<span>→ " + esc(c ? c.nome : t.categoria) + "?</span><button>Criar regra</button><button>Não</button>";
+  var bts = caixa.querySelectorAll("button");
+  bts[0].addEventListener("click", function () {
+    var termo2 = N.normalizar(caixa.querySelector("input").value);
+    if (!termo2) return;
+    estado.regras = estado.regras.filter(function (r) { return N.normalizar(r.termo) !== termo2; });
+    estado.regras.push({ termo: termo2, categoria: t.categoria, divisao: "" });
+    var n = N.reaplicarRegras(estado);
+    salvarConfig();
+    brinde("Regra criada" + (n ? " e aplicada em mais " + n + " transaç" + (n === 1 ? "ão" : "ões") : "") + ".");
+    desenhar();
+  });
+  bts[1].addEventListener("click", function () { $("#brinde").style.display = "none"; });
+  brinde(caixa, 12000);
+}
+
+function formNova() {
+  var el = $("#form-nova");
+  if (el.innerHTML) { el.innerHTML = ""; return; }
+  var hojeStr = new Date().toISOString().slice(0, 10);
+  el.innerHTML = '<div class="linha-form" style="margin:0 0 14px">' +
+    '<input type="date" id="n-data" value="' + hojeStr + '">' +
+    '<input type="text" id="n-desc" placeholder="Descrição" style="flex:1 1 180px">' +
+    '<input type="text" id="n-valor" placeholder="Valor (ex.: 35,90)" inputmode="decimal" style="width:130px">' +
+    '<select id="n-pessoa"><option value="p1">' + esc(nome("p1")) + '</option><option value="p2">' + esc(nome("p2")) + "</option></select>" +
+    '<select id="n-tipo"><option value="outro">Dinheiro/outro</option><option value="cartao">Cartão</option><option value="conta">Conta</option></select>' +
+    '<button class="botao primario" id="n-ok">Lançar</button></div>';
+  $("#n-desc").focus();
+  $("#n-ok").addEventListener("click", function () {
+    var v = N.lerValor($("#n-valor").value), d = $("#n-desc").value.trim(), data = $("#n-data").value;
+    if (!d || isNaN(v) || !data) { brinde("Preencha data, descrição e valor."); return; }
+    var conta = $("#n-pessoa").value + "-" + $("#n-tipo").value;
+    N.importar(estado, conta, [{ id: "m-" + Date.now().toString(36), data: data, descricao: d, valor: v }], "manual");
+    salvar();
+    el.innerHTML = "";
+    mesAtual = N.mesDe(data);
+    desenhar();
+    brinde("Lançado.");
+  });
+}
+
+/* =============================================================== IMPORTAR */
+function desenharImportar() {
+  var el = $("#painel-importar");
+  var h = '<div class="cartao"><h2>Importar extrato ou fatura do Nubank</h2>';
+  h += '<p class="sub" style="margin-top:0">De quem é o arquivo?</p><div class="escolha-pessoa">';
+  ["p1", "p2"].forEach(function (p) {
+    h += '<label><input type="radio" name="imp-pessoa" value="' + p + '"' + (pessoaImport === p ? " checked" : "") + ">" +
+      bolinha(p) + esc(nome(p)) + "</label>";
+  });
+  h += "</div>";
+  h += '<div class="soltar" id="soltar"><strong>Arraste os arquivos aqui</strong><br>ou clique para escolher · CSV ou OFX, vários de uma vez<br>' +
+    '<span class="mudo">O app descobre sozinho se é fatura do cartão ou extrato da conta.</span></div>';
+  h += '<div class="log" id="log"></div>';
+  h += "</div>";
+
+  h += '<div class="grade grade-2">';
+  h += '<div class="cartao"><h2>Como tirar os arquivos do Nubank</h2>' +
+    "<h3>Fatura do cartão (CSV)</h3><ol class=\"passos\">" +
+    "<li>No app: <strong>Cartão de crédito</strong> → role até a fatura do mês.</li>" +
+    "<li>Toque em <strong>Exportar fatura</strong> (ou no ícone de compartilhar) e escolha <strong>CSV</strong>.</li>" +
+    "<li>O arquivo chega por e-mail ou fica nos downloads.</li></ol>" +
+    "<h3>Extrato da conta (CSV ou OFX)</h3><ol class=\"passos\">" +
+    "<li>No app: <strong>Conta</strong> → ícone de extrato/documentos → <strong>Pedir extrato</strong>.</li>" +
+    "<li>Escolha o período e o formato <strong>CSV</strong> (ou OFX).</li></ol>" +
+    '<p class="sub">Os nomes dos menus mudam de vez em quando; se não achar, procure por “exportar” ou “extrato” na ajuda do app.</p>' +
+    '<p class="sub">Pode importar o mesmo arquivo de novo sem medo: o que já existe é ignorado. Use <strong>um formato por conta</strong> (só CSV ou só OFX) — os dois juntos podem duplicar.</p>' +
+    "</div>";
+
+  h += '<div class="cartao"><h2>Conexão automática (opcional)</h2>' +
+    '<p class="sub" style="margin-top:0">O Nubank não tem API aberta para pessoa física. O caminho oficial é o <strong>Open Finance</strong>, ' +
+    "e ele é <strong>grátis para uso pessoal pelo Meu Pluggy</strong> (cada um com a própria conta lá). O script <code>financas_pluggy.py</code> " +
+    "baixa as transações num computador e o app, aberto direto desse computador, importa e sobe para o cofre.</p>";
+  if (window.FINANCAS_PLUGGY) {
+    var d = window.FINANCAS_PLUGGY;
+    h += '<p>✓ Arquivo <code>financas-dados.js</code> encontrado: ' + (d.transacoes || []).length + " transações, geradas em " +
+      esc(new Date(d.geradoEm).toLocaleString("pt-BR")) + ".</p>";
+  } else {
+    h += '<p class="sub">Nenhum <code>financas-dados.js</code> nesta pasta. Veja o passo a passo no <code>LEIA-ME.md</code> da pasta <code>financas</code>.</p>';
+  }
+  h += "</div></div>";
+  el.innerHTML = h;
+
+  $$('input[name="imp-pessoa"]', el).forEach(function (r) {
+    r.addEventListener("change", function () { pessoaImport = r.value; gravarPrefs({ eu: r.value }); });
+  });
+  var zona = $("#soltar");
+  zona.addEventListener("click", function () { $("#arquivo").click(); });
+  zona.addEventListener("dragover", function (ev) { ev.preventDefault(); zona.classList.add("por-cima"); });
+  zona.addEventListener("dragleave", function () { zona.classList.remove("por-cima"); });
+  zona.addEventListener("drop", function (ev) {
+    ev.preventDefault(); zona.classList.remove("por-cima");
+    lerArquivos(ev.dataTransfer.files);
+  });
+}
+
+$("#arquivo").addEventListener("change", function () { lerArquivos(this.files); this.value = ""; });
+
+function lerTexto(arq) {
+  return arq.text ? arq.arrayBuffer().then(decodificar) : new Promise(function (ok, erro) {
+    var fr = new FileReader();
+    fr.onload = function () { ok(decodificar(fr.result)); };
+    fr.onerror = erro;
+    fr.readAsArrayBuffer(arq);
+  });
+}
+/* OFX de banco às vezes vem em Latin-1: se o UTF-8 der caractere quebrado, relê. */
+function decodificar(buf) {
+  var t = new TextDecoder("utf-8").decode(buf);
+  if (t.indexOf("�") !== -1) t = new TextDecoder("windows-1252").decode(buf);
+  return t;
+}
+
+function lerArquivos(lista) {
+  var arqs = Array.prototype.slice.call(lista || []);
+  var log = $("#log");
+  var p = pessoaImport;
+  var ultimoMes = "";
+  arqs.reduce(function (cadeia, arq) {
+    return cadeia.then(function () { return lerTexto(arq); }).then(function (texto) {
+      var lido = N.lerArquivo(texto);
+      var conta = p + "-" + lido.tipo;
+      var r = N.importar(estado, conta, lido.itens, lido.formato);
+      salvar();
+      var meses = {};
+      lido.itens.forEach(function (i) { meses[N.mesDe(i.data)] = true; });
+      var ms = Object.keys(meses).sort();
+      if (ms.length && ms[ms.length - 1] > ultimoMes) ultimoMes = ms[ms.length - 1];
+      log.insertAdjacentHTML("afterbegin", "<div>✓ <strong>" + esc(arq.name) + "</strong> → " + esc(nome(p)) + " · " +
+        N.TIPOS_CONTA[lido.tipo] + ": " + r.novas + " nova" + (r.novas === 1 ? "" : "s") +
+        (r.repetidas ? ", " + r.repetidas + " já estava" + (r.repetidas === 1 ? "" : "m") + " aqui" : "") + "</div>");
+    }).catch(function (err) {
+      log.insertAdjacentHTML("afterbegin", '<div class="erro">✗ <strong>' + esc(arq.name) + "</strong>: " + esc(err.message || err) + "</div>");
+    });
+  }, Promise.resolve()).then(function () {
+    if (ultimoMes) mesAtual = ultimoMes;
+    $("#mes-nome").textContent = nomeMes(mesAtual);
+  });
+}
+
+/* ============================================================= CONFIGURAR */
+function desenharConfig() {
+  var el = $("#painel-config");
+  var h = '<div class="cartao" id="cartao-nuvem"><h2>Cada um no seu celular</h2>';
+  if (!nuvem.id) {
+    h += '<p class="sub" style="margin-top:0">Conecte este aparelho ao <strong>cofre do casal</strong> para os dois verem e editarem ' +
+      "os mesmos dados, cada um de onde estiver. Os dados são <strong>criptografados aqui</strong>, com a senha do casal, antes de " +
+      "sair do aparelho: o servidor só guarda texto embaralhado e nunca vê a senha.</p>" +
+      '<div class="linha-form">' +
+      (servidorPadrao() ? "" : '<input type="text" id="nuvem-servidor" placeholder="https://financas-casal….workers.dev" style="flex:1 1 260px" value="' + esc(nuvem.servidor || "") + '">') +
+      '<input type="text" id="nuvem-senha" placeholder="senha do casal" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1 1 200px">' +
+      '<button class="botao" id="nuvem-gerar">Gerar</button>' +
+      '<button class="botao primario" id="nuvem-conectar">Conectar</button></div>' +
+      '<p class="sub">Primeira vez: um de vocês gera a senha e conecta. Depois manda o <strong>link de convite</strong> para o outro, ' +
+      "que só precisa abrir. <strong>Guardem a senha</strong>: sem ela não dá para abrir o cofre num aparelho novo, e ninguém consegue recuperar.</p>";
+  } else {
+    h += '<p id="nuvem-status" style="margin-top:0">' + textoNuvem() + "</p>" +
+      '<div class="linha-form" style="margin-top:0"><button class="botao" id="nuvem-agora">Sincronizar agora</button>' +
+      (nuvem.senha ? '<button class="botao primario" id="nuvem-convite">Copiar link de convite</button>' : "") +
+      '<button class="botao perigo" id="nuvem-sair">Desconectar este aparelho</button></div>' +
+      '<p class="sub">O link de convite <strong>contém a senha</strong>: mande só para a outra pessoa, por mensagem direta. ' +
+      "Desconectar não apaga nada: os dados continuam aqui e no cofre.</p>";
+  }
+  h += "</div>";
+
+  h += '<div class="cartao"><h2>Vocês dois</h2><div class="pessoas-conf">';
+  ["p1", "p2"].forEach(function (p) {
+    h += '<div class="pessoa-conf"><div class="titulo">' + bolinha(p) + (p === "p1" ? "Pessoa 1" : "Pessoa 2") + "</div>" +
+      '<label class="campo">Nome no app<input type="text" data-pessoa="' + p + '" data-k="nome" value="' + esc(estado.pessoas[p].nome) + '"></label>' +
+      '<label class="campo">Nome completo como aparece no Pix<input type="text" data-pessoa="' + p + '" data-k="nomeBanco" placeholder="ex.: Maria Souza Lima" value="' + esc(estado.pessoas[p].nomeBanco) + '"></label>' +
+      "</div>";
+  });
+  h += "</div>";
+  h += '<p class="sub">O nome do Pix serve para reconhecer as transferências entre vocês: elas não contam como gasto e entram no acerto de contas.</p>';
+  h += '<div class="linha-form"><label class="campo">Quanto das despesas do casal é de ' + esc(nome("p1")) +
+    '<span><input type="number" id="c-div" min="0" max="100" step="1" value="' + Math.round(N.pct(estado, "p1") * 100) + '" style="width:80px"> %</span></label>' +
+    '<span class="sub" id="c-div-outra">' + esc(nome("p2")) + " fica com " + Math.round(N.pct(estado, "p2") * 100) + "%</span></div>";
+  h += "</div>";
+
+  /* Categorias */
+  h += '<div class="cartao"><h2>Categorias e orçamento</h2><div class="rolar"><table class="tabela-conf"><thead><tr>' +
+    "<th>Nome</th><th>Orçamento do mês (casal)</th><th>Do casal por padrão</th><th></th></tr></thead><tbody>";
+  estado.categorias.forEach(function (c) {
+    var esp = N.ESPECIAIS[c.id];
+    h += '<tr data-cat="' + esc(c.id) + '"><td><input type="text" data-k="nome" value="' + esc(c.nome) + '"></td>' +
+      "<td>" + (esp ? '<span class="mudo">não conta como gasto</span>' : '<input type="number" min="0" step="10" data-k="orcamento" value="' + (c.orcamento || "") + '" placeholder="livre">') + "</td>" +
+      "<td>" + (esp ? "" : '<input type="checkbox" data-k="casal"' + (c.casal ? " checked" : "") + ">") + "</td>" +
+      "<td>" + (esp || c.id === "outros" ? "" : '<button class="botao-x" data-apagar-cat title="Apagar categoria">×</button>') + "</td></tr>";
+  });
+  h += "</tbody></table></div>";
+  h += '<div class="linha-form"><input type="text" id="nova-cat" placeholder="Nova categoria"><button class="botao" id="add-cat">Adicionar</button></div></div>';
+
+  /* Regras */
+  var regras = estado.regras.map(function (r, i) { return { r: r, i: i }; })
+    .sort(function (a, b) { return a.r.categoria.localeCompare(b.r.categoria) || a.r.termo.localeCompare(b.r.termo); });
+  h += '<div class="cartao"><h2>Regras automáticas</h2>' +
+    '<p class="sub" style="margin-top:0">Se a descrição tiver o termo (palavra inteira, sem ligar para acento ou maiúscula), a transação ganha a categoria. ' +
+    "O termo mais longo vence: “uber eats” ganha de “uber”. Editar uma transação à mão sempre vence a regra.</p>";
+  h += '<div class="linha-form" style="margin-top:0"><input type="text" id="nova-regra-termo" placeholder="termo, ex.: padaria do ze">' +
+    '<select id="nova-regra-cat">' + opcoesCategoria("outros") + "</select>" +
+    '<select id="nova-regra-div"><option value="">divisão da categoria</option><option value="casal">sempre do casal</option><option value="pessoal">sempre pessoal</option></select>' +
+    '<button class="botao" id="add-regra">Adicionar regra</button>' +
+    '<button class="botao" id="reaplicar">Reaplicar regras</button></div>';
+  h += '<div class="linha-form"><input type="search" id="busca-regra" placeholder="Filtrar regras…" style="flex:1"></div>';
+  h += '<div class="rolar" style="max-height:360px;overflow-y:auto;margin-top:8px"><table class="tabela-conf"><thead><tr><th>Termo</th><th>Categoria</th><th>Divisão</th><th></th></tr></thead><tbody id="tab-regras">';
+  regras.forEach(function (x) {
+    var c = N.categoria(estado, x.r.categoria);
+    h += '<tr data-regra="' + x.i + '" data-busca="' + esc(N.normalizar(x.r.termo + " " + (c ? c.nome : ""))) + '"><td>' + esc(x.r.termo) + "</td><td>" + esc(c ? c.nome : x.r.categoria) +
+      "</td><td>" + (x.r.divisao === "casal" ? "do casal" : x.r.divisao === "pessoal" ? "pessoal" : '<span class="mudo">da categoria</span>') +
+      '</td><td><button class="botao-x" data-apagar-regra title="Apagar regra">×</button></td></tr>';
+  });
+  h += "</tbody></table></div></div>";
+
+  /* Backup */
+  h += '<div class="cartao"><h2>Backup</h2>' +
+    '<p class="sub" style="margin-top:0">' + (nuvem.id
+      ? "Os dados ficam neste aparelho e no cofre cifrado. Um backup em arquivo é a garantia extra, caso a senha se perca."
+      : "Sem o cofre conectado, tudo fica só <strong>neste navegador</strong>. “Juntar backup” soma o arquivo de outro aparelho a este, sem duplicar.") + "</p>" +
+    '<div class="linha-form"><button class="botao primario" id="exportar">Exportar backup</button>' +
+    '<button class="botao" id="juntar">Juntar backup…</button>' +
+    '<button class="botao perigo" id="apagar-tudo">Apagar tudo</button></div>' +
+    '<p class="sub">' + estado.transacoes.length + " transações salvas.</p></div>";
+
+  el.innerHTML = h;
+
+  /* ligações */
+  $$("input[data-pessoa]", el).forEach(function (i) {
+    i.addEventListener("change", function () {
+      estado.pessoas[i.dataset.pessoa][i.dataset.k] = i.value.trim();
+      if (i.dataset.k === "nomeBanco") N.reaplicarRegras(estado);
+      salvarConfig(); desenharConfig();
+    });
+  });
+  $("#c-div").addEventListener("change", function () {
+    var v = Math.min(100, Math.max(0, Number(this.value) || 0));
+    estado.divisao.p1 = v; salvarConfig(); desenharConfig();
+  });
+  $$("tr[data-cat] input", el).forEach(function (i) {
+    i.addEventListener("change", function () {
+      var c = N.categoria(estado, i.closest("tr").dataset.cat);
+      if (i.dataset.k === "casal") c.casal = i.checked;
+      else if (i.dataset.k === "orcamento") c.orcamento = Number(i.value) || 0;
+      else c.nome = i.value.trim() || c.nome;
+      salvarConfig();
+    });
+  });
+  $$("[data-apagar-cat]", el).forEach(function (b) {
+    b.addEventListener("click", function () {
+      var id = b.closest("tr").dataset.cat, c = N.categoria(estado, id);
+      var n = estado.transacoes.filter(function (t) { return t.categoria === id; }).length;
+      if (!confirm('Apagar a categoria "' + c.nome + '"?' + (n ? "\n\n" + n + " transações vão para Outros." : ""))) return;
+      estado.categorias = estado.categorias.filter(function (x) { return x.id !== id; });
+      estado.regras = estado.regras.filter(function (r) { return r.categoria !== id; });
+      estado.transacoes.forEach(function (t) { if (t.categoria === id) t.categoria = "outros"; });
+      salvarConfig(); desenharConfig();
+    });
+  });
+  $("#add-cat").addEventListener("click", function () {
+    var n = $("#nova-cat").value.trim();
+    if (!n) return;
+    var id = N.normalizar(n).replace(/ /g, "-") || "cat";
+    while (N.categoria(estado, id)) id += "-2";
+    var i = estado.categorias.findIndex(function (c) { return c.id === "outros"; });
+    estado.categorias.splice(i < 0 ? estado.categorias.length : i, 0, { id: id, nome: n, casal: false, orcamento: 0 });
+    salvarConfig(); desenharConfig();
+  });
+  $("#add-regra").addEventListener("click", function () {
+    var t = N.normalizar($("#nova-regra-termo").value);
+    if (!t) return;
+    estado.regras = estado.regras.filter(function (r) { return N.normalizar(r.termo) !== t; });
+    estado.regras.push({ termo: t, categoria: $("#nova-regra-cat").value, divisao: $("#nova-regra-div").value });
+    var n = N.reaplicarRegras(estado);
+    salvarConfig(); desenharConfig();
+    brinde("Regra criada" + (n ? ", " + n + " transações mudaram." : "."));
+  });
+  $("#reaplicar").addEventListener("click", function () {
+    var n = N.reaplicarRegras(estado);
+    salvar();
+    brinde(n ? n + " transações mudaram de categoria." : "Nada mudou: tudo já seguia as regras.");
+  });
+  $("#busca-regra").addEventListener("input", function () {
+    var q = N.normalizar(this.value);
+    $$("#tab-regras tr").forEach(function (tr) { tr.style.display = !q || tr.dataset.busca.indexOf(q) !== -1 ? "" : "none"; });
+  });
+  $$("[data-apagar-regra]", el).forEach(function (b) {
+    b.addEventListener("click", function () {
+      estado.regras.splice(Number(b.closest("tr").dataset.regra), 1);
+      salvarConfig(); desenharConfig();
+    });
+  });
+  $("#exportar").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(estado, null, 1)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "financas-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+  $("#juntar").addEventListener("click", function () { $("#arquivo-backup").click(); });
+  $("#apagar-tudo").addEventListener("click", function () {
+    var msg = nuvem.id
+      ? "Apagar tudo DESTE APARELHO e desconectar do cofre?\n\nO cofre e o celular da outra pessoa continuam intactos."
+      : "Apagar TODAS as transações, regras e categorias deste navegador?\n\nExporte um backup antes se quiser guardar.";
+    if (!confirm(msg)) return;
+    nuvem = {}; gravarNuvem(); mostrarNuvem("off");
+    estado = N.estadoPadrao(); gravarLocal(); desenharConfig(); brinde("Tudo apagado deste aparelho.");
+  });
+  if (!nuvem.id) {
+    $("#nuvem-gerar").addEventListener("click", function () { $("#nuvem-senha").value = N.gerarSenha(); });
+    $("#nuvem-conectar").addEventListener("click", function () {
+      conectar($("#nuvem-senha").value, $("#nuvem-servidor") ? $("#nuvem-servidor").value : "");
+    });
+  } else {
+    $("#nuvem-agora").addEventListener("click", function () { sincronizar(); });
+    $("#nuvem-sair").addEventListener("click", function () {
+      if (!confirm("Desconectar este aparelho do cofre?\n\nOs dados continuam aqui e no cofre; para voltar, é só usar a senha de novo.")) return;
+      nuvem = {}; gravarNuvem(); mostrarNuvem("off"); desenharConfig();
+    });
+    if ($("#nuvem-convite")) $("#nuvem-convite").addEventListener("click", function () {
+      var link = linkConvite();
+      var copiar = navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(link) : Promise.reject();
+      copiar.then(function () { brinde("Link copiado. Mande só para a outra pessoa."); },
+                  function () { prompt("Copie o link e mande só para a outra pessoa:", link); });
+    });
+  }
+}
+
+$("#arquivo-backup").addEventListener("change", function () {
+  var arq = this.files[0];
+  this.value = "";
+  if (!arq) return;
+  lerTexto(arq).then(function (t) {
+    var outro = JSON.parse(t);
+    if (!outro || !Array.isArray(outro.transacoes)) throw new Error("não parece um backup deste app");
+    var n = N.mesclar(estado, outro);
+    salvar(); desenhar();
+    brinde(n + " transações novas vieram do backup.");
+  }).catch(function (err) { brinde("Não deu para ler o backup: " + (err.message || err)); });
+});
+
+/* ------------------------------------------------------------------ início */
+if (window.FINANCAS_PLUGGY) {
+  var r = N.importarPluggy(estado, window.FINANCAS_PLUGGY);
+  salvar();
+  if (r.novas) setTimeout(function () { brinde(r.novas + " transações novas do Open Finance."); }, 300);
+}
+/* Abre no último mês que tem dado, se o atual estiver vazio. */
+if (estado.transacoes.length && !estado.transacoes.some(function (t) { return N.mesDe(t.data) === mesAtual; })) {
+  mesAtual = N.mesDe(estado.transacoes[0].data);
+}
+$("#nuvem-ind").addEventListener("click", function () { trocarAba("config"); });
+trocarAba("resumo");
+
+/* Link de convite: .../#cofre=senha. O que vem depois do # não vai para o
+   servidor; tiro da barra de endereço logo em seguida. */
+var convite = /[#&]cofre=([^&]+)/.exec(location.hash);
+if (convite) {
+  history.replaceState(null, "", location.pathname + location.search);
+  var senhaConvite = decodeURIComponent(convite[1]);
+  if (!nuvem.id) { trocarAba("config"); conectar(senhaConvite, ""); }
+  else if (N.limparSenha(senhaConvite) !== nuvem.senha) brinde("Este aparelho já está conectado a um cofre. Desconecte em Configurar para usar o convite.", 8000);
+}
+if (nuvem.id) {
+  mostrarNuvem("indo");
+  sincronizar();
+}
+setInterval(function () { if (nuvem.id && !document.hidden) sincronizar(); }, 60000);
+document.addEventListener("visibilitychange", function () { if (nuvem.id && !document.hidden) sincronizar(); });
+window.addEventListener("online", function () { if (nuvem.id) sincronizar(); });
+})();
+</script>
+</body>
+</html>
