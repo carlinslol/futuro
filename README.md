@@ -20,12 +20,15 @@ Cloudflare, consegue ler um gasto lá.
 
 ## Montar (uma vez, uns 10 minutos)
 
-Precisa de uma conta Cloudflare (o plano grátis
-basta) e do `wrangler` (`npm install -g wrangler`).
+Precisa de uma conta Cloudflare (o plano grátis basta), do
+[Node](https://nodejs.org) e do `wrangler` (`npm install -g wrangler`).
 
-1. Dê duplo clique em **`publicar.bat`**. Na primeira vez ele
-   cria o banco, a tabela e publica. No fim ele mostra o endereço, algo como
-   `https://financas-casal.SUA-CONTA.workers.dev`.
+1. Dê duplo clique em **`publicar.bat`**. Na primeira vez ele abre o navegador
+   para o login na Cloudflare, cria o banco, a tabela e publica. No fim ele
+   mostra o endereço, algo como `https://financas-casal.SUA-CONTA.workers.dev`.
+   Ele também grava o id do banco no `worker/wrangler.toml`: faça o commit
+   dessa mudança (o id não é segredo), senão a próxima publicação de outro
+   computador tenta criar o banco de novo.
 2. Abra esse endereço no seu celular → **Configurar** → *Cada um no seu
    celular* → **Gerar** → **Conectar**.
 3. **Guarde a senha** (num gerenciador de senhas, por exemplo). Sem ela não
