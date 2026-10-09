@@ -30,9 +30,9 @@ def ok(c, nome, extra=""):
 
 
 CONTAS = {
-    "item-a": [{"id": "ca", "type": "CREDIT", "name": "Nubank cartão"},
+    "aaaaaaaa-0000-4000-8000-00000000000a": [{"id": "ca", "type": "CREDIT", "name": "Nubank cartão"},
                {"id": "ba", "type": "BANK", "name": "Nubank conta"}],
-    "item-b": [{"id": "cb", "type": "CREDIT", "name": "Nubank cartão"}],
+    "bbbbbbbb-0000-4000-8000-00000000000b": [{"id": "cb", "type": "CREDIT", "name": "Nubank cartão"}],
 }
 TRANS = {
     # cartão: 3 páginas de 1 para testar a paginação
@@ -54,7 +54,7 @@ pedidos = []
 # Como no plano grátis (Meu Pluggy): cada titular tem a própria aplicação, e
 # cada aplicação só enxerga os itens do próprio titular.
 APPS = {("id-a", "segredo-a"): "chave-a", ("id-b", "segredo-b"): "chave-b"}
-DONO = {"item-a": "chave-a", "item-b": "chave-b", "ca": "chave-a", "ba": "chave-a", "cb": "chave-b"}
+DONO = {"aaaaaaaa-0000-4000-8000-00000000000a": "chave-a", "bbbbbbbb-0000-4000-8000-00000000000b": "chave-b", "ca": "chave-a", "ba": "chave-a", "cb": "chave-b"}
 
 
 class Falso(BaseHTTPRequestHandler):
@@ -129,21 +129,26 @@ ok(cod == 1 and os.path.exists(F.CONFIG), "primeira vez cria o financas_config.t
 cod, txt = rodar()
 ok(cod == 1 and "itemId" in txt, "config vazio dá mensagem clara", txt.strip()[:60])
 with open(F.CONFIG, "w", encoding="utf-8") as f:
-    f.write("pessoa1 = item-a\npessoa1_client_id = id-a\npessoa1_client_secret = errado\n")
+    f.write("pessoa1 = aaaaaaaa-0000-4000-8000-00000000000a\npessoa1_client_id = id-a\npessoa1_client_secret = errado\n")
 cod, txt = rodar()
 ok(cod == 1 and "recusou" in txt, "credencial errada é explicada", txt.strip()[:60])
 with open(F.CONFIG, "w", encoding="utf-8") as f:
-    f.write("pessoa1 = item-a\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\npessoa2 = item-b\n")
+    f.write("pessoa1 = aaaaaaaa-0000-4000-8000-00000000000a\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\npessoa2 = bbbbbbbb-0000-4000-8000-00000000000b\n")
 cod, txt = rodar()
 ok(cod == 1 and "pessoa2_client_id" in txt, "pessoa sem credencial é apontada", txt.strip()[:60])
 with open(F.CONFIG, "w", encoding="utf-8") as f:
+    f.write("pessoa1 = Brenno\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\n")
+pedidos.clear()
+cod, txt = rodar()
+ok(cod == 1 and "não é um itemId" in txt and not pedidos, "nome no lugar do itemId: avisa sem chamar o Pluggy", txt.strip().splitlines()[0])
+with open(F.CONFIG, "w", encoding="utf-8") as f:
     f.write("# comentário\n"
-            "pessoa1 = item-a\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\n"
-            "pessoa2 = item-b\npessoa2_client_id = id-b\npessoa2_client_secret = segredo-b\n")
+            "pessoa1 = aaaaaaaa-0000-4000-8000-00000000000a\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\n"
+            "pessoa2 = bbbbbbbb-0000-4000-8000-00000000000b\npessoa2_client_id = id-b\npessoa2_client_secret = segredo-b\n")
 
 print("\n=== config escrito do jeito que der ===")
-texto = ('pessoa1 = "item-a"\npessoa1_client_id = "id-a"\npessoa1_client_secret = <segredo-a>\n'
-         "pessoa2 = 'item-b'\npessoa2_client_id = id-b\npessoa2_client_secret =   segredo-b   \n")
+texto = ('pessoa1 = "aaaaaaaa-0000-4000-8000-00000000000a"\npessoa1_client_id = "id-a"\npessoa1_client_secret = <segredo-a>\n'
+         "pessoa2 = 'bbbbbbbb-0000-4000-8000-00000000000b'\npessoa2_client_id = id-b\npessoa2_client_secret =   segredo-b   \n")
 for nome, dados in (("aspas e <> em volta", texto.encode("utf-8")),
                     ("Bloco de Notas 'Unicode' (UTF-16)", texto.encode("utf-16")),
                     ("UTF-8 com BOM", b"\xef\xbb\xbf" + texto.encode("utf-8")),
@@ -154,8 +159,8 @@ for nome, dados in (("aspas e <> em volta", texto.encode("utf-8")),
     ok(cod == 0 and "OK" in txt, "config lido: " + nome, txt.strip().splitlines()[-1][:50])
 with open(F.CONFIG, "w", encoding="utf-8") as f:
     f.write("# comentário\n"
-            "pessoa1 = item-a\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\n"
-            "pessoa2 = item-b\npessoa2_client_id = id-b\npessoa2_client_secret = segredo-b\n")
+            "pessoa1 = aaaaaaaa-0000-4000-8000-00000000000a\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\n"
+            "pessoa2 = bbbbbbbb-0000-4000-8000-00000000000b\npessoa2_client_id = id-b\npessoa2_client_secret = segredo-b\n")
 
 print("\n=== --testar e --atualizar ===")
 cod, txt = rodar("--testar")
@@ -193,7 +198,7 @@ ok(desde == "2026-09-26", "incremental: 10 dias antes da última transação", d
 
 print("\n=== só uma pessoa neste computador ===")
 with open(F.CONFIG, "w", encoding="utf-8") as f:
-    f.write("pessoa1 =\npessoa2 = item-b\npessoa2_client_id = id-b\npessoa2_client_secret = segredo-b\n")
+    f.write("pessoa1 =\npessoa2 = bbbbbbbb-0000-4000-8000-00000000000b\npessoa2_client_id = id-b\npessoa2_client_secret = segredo-b\n")
 TRANS["cb"] = [{"id": "t8", "date": "2026-10-09T00:00:00.000Z", "description": "Farmácia", "amount": 30.0, "type": "DEBIT"}]
 cod, txt = rodar()
 dados = F.ler_saida()

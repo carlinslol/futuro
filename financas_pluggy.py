@@ -24,6 +24,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -34,6 +35,7 @@ PASTA = os.path.dirname(os.path.abspath(__file__))
 CONFIG = os.path.join(PASTA, "financas_config.txt")
 SAIDA = os.path.join(PASTA, "financas-dados.js")
 PREFIXO = "window.FINANCAS_PLUGGY = "
+UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 API = os.environ.get("PLUGGY_URL", "https://api.pluggy.ai").rstrip("/")
 
 MODELO_CONFIG = """\
@@ -50,7 +52,9 @@ MODELO_CONFIG = """\
 # Pode deixar uma pessoa em branco: assim cada um roda o script no próprio
 # computador só com os próprios dados, e o cofre junta os dois.
 #
-# itemId: o da conexão MeuPluggy (ou de cada banco). Vários: separe por vírgula.
+# pessoa1 / pessoa2 = o itemId (NÃO o nome), um código assim:
+#   1a2b3c4d-1111-2222-3333-444455556666
+# O dashboard mostra depois de "Conectar conta" > MeuPluggy. Vários: separe por vírgula.
 pessoa1 =
 pessoa1_client_id =
 pessoa1_client_secret =
@@ -123,6 +127,14 @@ def ler_config():
             raise Erro("Faltam %s_client_id e %s_client_secret no %s."
                        % (p, p, os.path.basename(CONFIG)))
         for i in ids:
+            if not UUID.match(i):
+                raise Erro(
+                    "Em %s = %s: isso não é um itemId.\n"
+                    "O itemId é um código no formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx, que o\n"
+                    "dashboard.pluggy.ai mostra depois de conectar o conector MeuPluggy\n"
+                    "(Conectar conta > MeuPluggy). O nome da pessoa não vai aqui: quem é a\n"
+                    "pessoa1 e a pessoa2 o app já sabe pela ordem (Pessoa 1 azul, Pessoa 2 laranja)."
+                    % (p, i))
             itens[i] = ("p1" if p == "pessoa1" else "p2", cred)
     if not itens:
         raise Erro("Nenhum itemId em pessoa1/pessoa2 no %s." % os.path.basename(CONFIG))
