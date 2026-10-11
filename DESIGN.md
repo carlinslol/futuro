@@ -35,6 +35,16 @@ typography:
     fontWeight: 800
     lineHeight: 0.8
     letterSpacing: "-0.005em"
+  display-phone:
+    fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
+    fontSize: "58px"
+    fontWeight: 800
+    lineHeight: 0.8
+  display-narrow:
+    fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
+    fontSize: "50px"
+    fontWeight: 800
+    lineHeight: 0.8
   headline:
     fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
     fontSize: "68px"
@@ -42,21 +52,63 @@ typography:
     lineHeight: 0.9
     letterSpacing: "-0.005em"
     fontFeature: "lnum"
+  headline-phone:
+    fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
+    fontSize: "52px"
+    fontWeight: 800
+    lineHeight: 0.9
+    fontFeature: "lnum"
+  bill-figure:
+    fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
+    fontSize: "60px"
+    fontWeight: 800
+    lineHeight: 0.86
+  person-figure:
+    fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
+    fontSize: "40px"
+    fontWeight: 800
+    lineHeight: 0.95
+  person-figure-phone:
+    fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
+    fontSize: "34px"
+    fontWeight: 800
+    lineHeight: 0.95
   title:
     fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
     fontSize: "26px"
     fontWeight: 800
     lineHeight: 1
     letterSpacing: "0.005em"
+  subtitle:
+    fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
+    fontSize: "19px"
+    fontWeight: 800
+    lineHeight: 1.1
+    letterSpacing: "0.01em"
   wordmark:
     fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
     fontSize: "26px"
     fontWeight: 800
     lineHeight: 1
     letterSpacing: "0.01em"
+  mini-folha-day:
+    fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
+    fontSize: "30px"
+    fontWeight: 800
+    lineHeight: 1
+  mini-folha-day-small:
+    fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
+    fontSize: "23px"
+    fontWeight: 800
+    lineHeight: 1
   day-number:
     fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
     fontSize: "28px"
+    fontWeight: 800
+    lineHeight: 0.9
+  day-number-phone:
+    fontFamily: "Folha, Arial Narrow, Roboto Condensed, sans-serif"
+    fontSize: "22px"
     fontWeight: 800
     lineHeight: 0.9
   lead:
@@ -64,9 +116,20 @@ typography:
     fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.5
+  drop-call:
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "17px"
+    fontWeight: 650
+    lineHeight: 1.5
   body:
     fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "15px"
+    fontWeight: 400
+    lineHeight: 1.5
+    fontFeature: "tnum"
+  body-row:
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.5
     fontFeature: "tnum"
@@ -75,11 +138,22 @@ typography:
     fontSize: "13px"
     fontWeight: 400
     lineHeight: 1.4
+  label-small:
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "12px"
+    fontWeight: 400
+    lineHeight: 1.2
+    fontFeature: "tnum"
   caption:
     fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "11px"
     fontWeight: 650
     letterSpacing: "0.01em"
+  caption-small:
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "10px"
+    fontWeight: 700
+    lineHeight: 1
 rounded:
   none: "0px"
   hair: "1px"

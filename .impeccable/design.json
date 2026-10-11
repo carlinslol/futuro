@@ -478,37 +478,93 @@
         "displayName": "Sheet Head",
         "purpose": "Month and year or tab name, uppercase; 58px phone, 50px under 380px."
       },
+      "display-phone": {
+        "displayName": "Sheet Head (phone)",
+        "purpose": "Sheet head at 760px and below."
+      },
+      "display-narrow": {
+        "displayName": "Sheet Head (narrow)",
+        "purpose": "Sheet head under 380px."
+      },
       "headline": {
         "displayName": "Headline Figure",
         "purpose": "Main budget amount; 52px phone. Bill value 60px (52px phone), per-person totals 40px (34px phone)."
+      },
+      "headline-phone": {
+        "displayName": "Headline Figure (phone)",
+        "purpose": "Main budget amount and bill value on phone."
+      },
+      "bill-figure": {
+        "displayName": "Bill Figure",
+        "purpose": "Current card bill value in Cartão."
+      },
+      "person-figure": {
+        "displayName": "Person Figure",
+        "purpose": "Per-person totals in Resumo; empty-state titles."
+      },
+      "person-figure-phone": {
+        "displayName": "Person Figure (phone)",
+        "purpose": "Per-person totals on phone."
       },
       "title": {
         "displayName": "Block Title",
         "purpose": "Uppercase block titles; sub-titles 19px; card owner and mini-folha day 30px (23px small mini-folha)."
       },
+      "subtitle": {
+        "displayName": "Sub-title",
+        "purpose": "Uppercase sub-titles inside blocks."
+      },
       "wordmark": {
         "displayName": "Wordmark",
         "purpose": "The name \"Clo\" in the top bar beside Clo's head at 32px; natural case."
+      },
+      "mini-folha-day": {
+        "displayName": "Mini-folha Day",
+        "purpose": "Mini-folha day number; card-owner names in Cartão."
+      },
+      "mini-folha-day-small": {
+        "displayName": "Mini-folha Day (small)",
+        "purpose": "Day number in the 44px mini-folha of Transações day groups."
       },
       "day-number": {
         "displayName": "Day Number",
         "purpose": "Calendar cells; 22px phone; future days 600 in faint ink; holiday names Folha 600 13px (11.5px phone)."
       },
+      "day-number-phone": {
+        "displayName": "Day Number (phone)",
+        "purpose": "Calendar cell numbers on phone."
+      },
       "lead": {
         "displayName": "Lead",
         "purpose": "Budget sentence under the headline figure; tapped-day heading at 650."
+      },
+      "drop-call": {
+        "displayName": "Drop Call",
+        "purpose": "The call to action inside the file drop zone."
       },
       "body": {
         "displayName": "Body",
         "purpose": "Text and list rows (14px), tabular money, 72ch max; drop-zone call 17px."
       },
+      "body-row": {
+        "displayName": "Body Row",
+        "purpose": "List rows, transaction rows, sub-notes, notices, toast text."
+      },
       "label": {
         "displayName": "Label",
         "purpose": "Notes, legends, table heads, sync pill 12px; day amounts 12px (11px phone, 10px under 380px)."
       },
+      "label-small": {
+        "displayName": "Small Label",
+        "purpose": "Table heads, sync pill, day-cell amounts, day-group dates."
+      },
       "caption": {
         "displayName": "Caption",
         "purpose": "Mini-folha header strips (uppercase; 10px small), month under the mini-folha day, status tags; phone tab labels 11.5px."
+      },
+      "caption-small": {
+        "displayName": "Small Caption",
+        "purpose": "Header strip of the small mini-folha."
       }
     },
     "fonts": [
