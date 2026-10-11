@@ -33,6 +33,11 @@ def ok(c, nome, extra=""):
 CONTAS = {
     "aaaaaaaa-0000-4000-8000-00000000000a": [{"id": "ca", "type": "CREDIT", "name": "Nubank cartão", "balance": 1234.5,
                 "creditData": {"brand": "MASTERCARD", "creditLimit": 5000, "availableCreditLimit": 3765.5,
+                               "disaggregatedCreditLimits": [
+                                   {"creditLineLimitType": "LIMITE_CREDITO_MODALIDADE_OPERACAO", "lineName": "SAQUE_CREDITO_BRASIL",
+                                    "limitAmount": 1000, "usedAmount": 0, "availableAmount": 1000},
+                                   {"creditLineLimitType": "LIMITE_CREDITO_TOTAL", "limitAmount": 5000,
+                                    "usedAmount": 1900.25, "availableAmount": 3099.75}],
                                "minimumPayment": 185.2, "balanceCloseDate": "2026-10-08T00:00:00.000Z",
                                "balanceDueDate": "2026-10-15T00:00:00.000Z"}},
                {"id": "ba", "type": "BANK", "name": "Nubank conta"}],
@@ -202,6 +207,29 @@ with open(F.CONFIG, "w", encoding="utf-8") as f:
             "pessoa1 = aaaaaaaa-0000-4000-8000-00000000000a\npessoa1_client_id = id-a\npessoa1_client_secret = segredo-a\n"
             "pessoa2 = bbbbbbbb-0000-4000-8000-00000000000b\npessoa2_client_id = id-b\npessoa2_client_secret = segredo-b\n")
 
+print("\n=== data no horário de Brasília ===")
+for v, esperado in (("2026-10-10T00:47:00.000Z", "2026-10-09"),   # 21:47 do dia 9 em Brasília
+                    ("2026-10-09T00:00:00.000Z", "2026-10-09"),   # só a data: fica no dia
+                    ("2026-10-09T03:00:00.000Z", "2026-10-09"),
+                    ("2026-10-09T21:47:00-03:00", "2026-10-09"),
+                    ("2026-10-09", "2026-10-09"), (None, None)):
+    ok(F.data_local(v) == esperado, "%r -> %r" % (v, esperado), F.data_local(v))
+x = F.converter({"id": "r1", "date": "2026-10-10T00:47:00.000Z", "description": "Dl *Riot Games", "amount": 30, "type": "DEBIT"}, "p1", "cartao")
+ok(x["data"] == "2026-10-09", "compra das 21:47 do dia 9 fica no dia 9")
+p_ = F.pendente({"id": "r2", "date": "2026-10-10T00:47:00.000Z", "description": "Dl *Riot Games", "amount": 30, "type": "DEBIT", "status": "PENDING"}, "p1", "cartao")
+ok(p_["data"] == "2026-10-09", "pendente também")
+
+print("\n=== --cartao (diagnóstico) ===")
+pedidos.clear()
+cod, txt = rodar("--cartao")
+ok(cod == 0 and "DIAGNÓSTICO DO CARTÃO" in txt and "LIMITE_CREDITO_TOTAL" in txt and "fatura fechada: vence 2026-09-15" in txt,
+   "mostra limites, linhas e faturas fechadas")
+ok("2026-09 (id da fatura)" in txt and "sem fatura (data 2026-10)" in txt and "lançamentos repetidos" in txt,
+   "agrupa por fatura (o id da fatura vale mais que a previsão) e procura repetidos")
+ok("maiores de 2026-09 (id da fatura)" in txt and "parcela 2/5" in txt, "lista os maiores perto do vencimento, com a parcela")
+ok(not os.path.exists(F.SAIDA), "não grava nada")
+ok("aaaaaaaa" not in txt and "segredo" not in txt, "não mostra ids nem segredo")
+
 print("\n=== --testar e --atualizar ===")
 cod, txt = rodar("--testar")
 ok(cod == 0 and "OK" in txt and not os.path.exists(F.SAIDA), "--testar não grava nada")
@@ -232,8 +260,13 @@ ok(por["t1"].get("parcela") == 2 and por["t1"].get("parcelas") == 5 and por["t1"
 ok("parcela" not in por["t4"], "conta corrente não ganha campos de cartão")
 cart = {c["conta"]: c for c in dados.get("cartoes", [])}
 ca = cart.get("ca", {})
-ok(ca.get("pessoa") == "p1" and ca.get("limite") == 5000 and ca.get("disponivel") == 3765.5 and ca.get("minimo") == 185.2,
-   "limite, disponível e mínimo", {k: ca.get(k) for k in ("limite", "disponivel", "minimo")})
+ok(ca.get("pessoa") == "p1" and ca.get("limite") == 5000 and ca.get("disponivel") == 3099.75 and ca.get("usado") == 1900.25
+   and ca.get("minimo") == 185.2 and ca.get("fonteLimite") == "LIMITE_CREDITO_TOTAL",
+   "limite pela linha LIMITE_CREDITO_TOTAL (não pelo availableCreditLimit)", {k: ca.get(k) for k in ("limite", "usado", "disponivel")})
+cb_ = cart.get("cb", {})
+ok(cb_.get("fonteLimite") == "creditData", "sem linhas detalhadas, usa o creditData")
+lt = F.limite_total({"disaggregatedCreditLimits": [{"creditLineLimitType": "LIMITE_CREDITO_TOTAL", "usedAmount": 100, "availableAmount": 900}]})
+ok(lt[:3] == (1000, 100, 900), "linha total sem limitAmount: soma usado + disponível", lt)
 ok(ca.get("fechamento") == "2026-10-08" and ca.get("vencimento") == "2026-10-15" and ca.get("saldo") == 1234.5, "fechamento e vencimento")
 ok(len(ca.get("faturas", [])) == 1 and ca["faturas"][0]["vencimento"] == "2026-09-15" and ca["faturas"][0]["total"] == 980.5,
    "faturas fechadas", ca.get("faturas"))

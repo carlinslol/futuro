@@ -295,6 +295,31 @@ def data10(v):
     return v if re.match(r"^\d{4}-\d{2}-\d{2}$", v) else None
 
 
+BRASILIA = dt.timezone(dt.timedelta(hours=-3))   # sem horário de verão desde 2019
+
+
+def data_local(v):
+    """Data da transação no horário de Brasília.
+
+    O Pluggy manda a hora em UTC: uma compra às 21:47 do dia 9 chega como
+    00:47Z do dia 10, e cortar os 10 primeiros caracteres punha no dia
+    errado. Meia-noite UTC em ponto é como vem a transação que só tem data
+    (sem hora) - essa fica no dia que veio, senão iria para o dia anterior."""
+    texto = str(v or "")
+    dia = data10(texto)
+    if not dia or len(texto) <= 10:
+        return dia
+    try:
+        d = dt.datetime.fromisoformat(texto.replace("Z", "+00:00"))
+    except ValueError:
+        return dia
+    if d.tzinfo is None:
+        return dia
+    if (d.hour, d.minute, d.second, d.microsecond) == (0, 0, 0, 0) and d.utcoffset() == dt.timedelta(0):
+        return dia
+    return d.astimezone(BRASILIA).date().isoformat()
+
+
 def campos_cartao(t):
     """Do creditCardMetadata: parcela 3 de 10, a fatura prevista (AAAA-MM) e o
     id da fatura no banco."""
@@ -319,7 +344,7 @@ def converter(t, pessoa, tipo):
     if (t.get("status") or "POSTED").upper() == "PENDING":
         return None  # compra ainda não fechada: o id pode mudar quando fechar
     valor = valor_de(t)
-    data = data10(t.get("date"))
+    data = data_local(t.get("date"))
     if valor is None or not data:
         return None
     x = {
@@ -340,7 +365,7 @@ def pendente(t, pessoa, tipo):
     """Transação ainda pendente no banco (conta ou cartão). Vai à parte, sem
     virar transação: o id muda quando ela fecha, e duplicaria."""
     valor = valor_de(t)
-    data = data10(t.get("date"))
+    data = data_local(t.get("date"))
     if valor is None or not data:
         return None
     x = {"id": str(t.get("id") or ""), "pessoa": pessoa, "tipo": tipo, "data": data,
@@ -357,13 +382,36 @@ def prevista(t):
     valor = valor_de(t)
     if valor is None:
         return None
-    x = {"descricao": t.get("description") or "(sem descrição)", "valor": valor, "data": data10(t.get("date"))}
+    x = {"descricao": t.get("description") or "(sem descrição)", "valor": valor, "data": data_local(t.get("date"))}
     x.update(campos_cartao(t))
     return x
 
 
+def limite_total(cd):
+    """(limite, usado, disponível) do cartão inteiro.
+
+    O availableCreditLimit do creditData pode vir de uma linha só (no Nubank
+    veio quase zerado com o limite livre em ~7,7 mil). No Open Finance o
+    certo é a linha LIMITE_CREDITO_TOTAL de disaggregatedCreditLimits."""
+    for l in cd.get("disaggregatedCreditLimits") or []:
+        if str(l.get("creditLineLimitType") or "").upper() == "LIMITE_CREDITO_TOTAL":
+            lim, usado, disp = l.get("limitAmount"), l.get("usedAmount"), l.get("availableAmount")
+            if lim is None and usado is not None and disp is not None:
+                lim = usado + disp
+            if disp is None and lim is not None and usado is not None:
+                disp = lim - usado
+            if usado is None and lim is not None and disp is not None:
+                usado = lim - disp
+            if lim is not None:
+                return lim, usado, disp, "LIMITE_CREDITO_TOTAL"
+    lim, disp = cd.get("creditLimit"), cd.get("availableCreditLimit")
+    usado = lim - disp if lim is not None and disp is not None else None
+    return lim, usado, disp, "creditData"
+
+
 def dados_do_cartao(api, c, pessoa, pendentes):
     cd = c.get("creditData") or {}
+    limite, usado, disponivel, fonte_limite = limite_total(cd)
     faturas = []
     try:
         for b in api.faturas(c["id"]):
@@ -377,13 +425,84 @@ def dados_do_cartao(api, c, pessoa, pendentes):
         "conta": c["id"], "pessoa": pessoa,
         "nome": c.get("marketingName") or c.get("name") or "Cartão",
         "bandeira": cd.get("brand") or "",
-        "limite": cd.get("creditLimit"), "disponivel": cd.get("availableCreditLimit"),
+        "limite": limite, "usado": usado, "disponivel": disponivel, "fonteLimite": fonte_limite,
         "saldo": c.get("balance"), "minimo": cd.get("minimumPayment"),
         "fechamento": data10(cd.get("balanceCloseDate")), "vencimento": data10(cd.get("balanceDueDate")),
         "faturas": faturas[:24],
         "previstas": [x for x in (prevista(t) for t in pendentes) if x],
         "atualizadoEm": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
     }
+
+
+def diagnostico_cartao(api, c, hoje):
+    """O que o banco manda do cartão, para conferir com o app do Nubank.
+    Sem ids e sem número de cartão; só valores, datas e o nome da loja."""
+    cd = c.get("creditData") or {}
+    linha = lambda *x: print("           " + " ".join(str(v) for v in x))
+    print()
+    linha("== DIAGNÓSTICO DO CARTÃO (confira com o app do banco) ==")
+    linha("creditData: limite", reais(cd.get("creditLimit")), "| availableCreditLimit", reais(cd.get("availableCreditLimit")),
+          "| balance da conta", reais(c.get("balance")), "| mínimo", reais(cd.get("minimumPayment")))
+    linha("            fecha", data10(cd.get("balanceCloseDate")), "| vence", data10(cd.get("balanceDueDate")),
+          "| limite flexível", cd.get("isLimitFlexible"))
+    for l in cd.get("disaggregatedCreditLimits") or []:
+        linha("  linha", l.get("creditLineLimitType"), l.get("lineName") or "", "| limite", reais(l.get("limitAmount")),
+              "| usado", reais(l.get("usedAmount")), "| disponível", reais(l.get("availableAmount")))
+    try:
+        bills = sorted(api.faturas(c["id"]), key=lambda b: str(b.get("dueDate") or ""), reverse=True)[:4]
+        for b in bills:
+            linha("  fatura fechada: vence", data10(b.get("dueDate")), "| fechou", data10(b.get("billClosingDate")),
+                  "| total", reais(b.get("totalAmount")))
+    except Erro as e:
+        bills = []
+        linha("  (sem /bills: %s)" % str(e)[:60])
+    venc_bill = {b.get("id"): (data10(b.get("dueDate")) or "")[:7] for b in bills}
+    lista = api.transacoes(c["id"], (hoje - dt.timedelta(days=120)).isoformat(),
+                           (hoje + dt.timedelta(days=400)).isoformat())
+    grupos, vistos = {}, {}
+    for t in lista:
+        m = t.get("creditCardMetadata") or {}
+        if m.get("billId") and venc_bill.get(m["billId"]):
+            chave = venc_bill[m["billId"]] + " (id da fatura)"
+        elif m.get("billForecastDate"):
+            chave = str(m["billForecastDate"])[:7] + " (previsão)"
+        else:
+            chave = "sem fatura (data " + (data_local(t.get("date")) or "?")[:7] + ")"
+        g = grupos.setdefault(chave, {"n": 0, "soma": 0.0, "pend": 0, "parc": 0, "itens": []})
+        v = valor_de(t) or 0
+        g["n"] += 1
+        g["soma"] += v
+        g["pend"] += (t.get("status") or "").upper() == "PENDING"
+        g["parc"] += bool(m.get("totalInstallments") and int(m.get("totalInstallments") or 0) > 1)
+        g["itens"].append(t)
+        k = (data_local(t.get("date")), t.get("description"), round(v, 2))
+        vistos.setdefault(k, set()).add(t.get("id"))
+    linha("lançamentos de %s a %s: %d" % ((hoje - dt.timedelta(days=120)).isoformat(),
+                                           (hoje + dt.timedelta(days=400)).isoformat(), len(lista)))
+    for chave in sorted(grupos):
+        g = grupos[chave]
+        linha("  %-34s %3d lançamentos  soma %12s  (%d pendentes, %d parcelados)"
+              % (chave, g["n"], reais(g["soma"]), g["pend"], g["parc"]))
+    venc = (data10(cd.get("balanceDueDate")) or hoje.isoformat())[:7]
+    a_, m_ = int(venc[:4]), int(venc[5:7])
+    perto = {"%04d-%02d" % (a_ + (m_ - 1 + d) // 12, (m_ - 1 + d) % 12 + 1) for d in (-1, 0, 1)}
+    for chave in sorted(grupos):
+        mes = re.search(r"\d{4}-\d{2}", chave)
+        if not mes or mes.group(0) not in perto:
+            continue
+        linha("  -- maiores de %s --" % chave)
+        for t in sorted(grupos[chave]["itens"], key=lambda t: -(valor_de(t) or 0))[:12]:
+            m = t.get("creditCardMetadata") or {}
+            parc = ""
+            if m.get("totalInstallments"):
+                parc = " parcela %s/%s (total %s)" % (m.get("installmentNumber"), m.get("totalInstallments"), reais(m.get("totalAmount")))
+            linha("    %s %-32.32s %11s %s%s" % (data_local(t.get("date")), t.get("description") or "",
+                                                reais(valor_de(t)), (t.get("status") or "")[:4], parc))
+    dup = [k for k, ids in vistos.items() if len(ids) > 1]
+    linha("lançamentos repetidos (mesma data, loja e valor, ids diferentes): %d" % len(dup))
+    for k in dup[:5]:
+        linha("    %s %-32.32s %s  x%d" % (k[0], k[1] or "", reais(k[2]), len(vistos[k])))
+    print()
 
 
 def quando(v):
@@ -595,6 +714,8 @@ def principal(argv=None):
     ap.add_argument("--dias", type=int, default=0,
                     help="quantos dias para trás buscar (padrão: desde a última vez, ou 365)")
     ap.add_argument("--testar", action="store_true", help="só lista as contas encontradas")
+    ap.add_argument("--cartao", action="store_true",
+                    help="diagnóstico do cartão: mostra o que o banco manda (limites, faturas, lançamentos)")
     ap.add_argument("--conectar", choices=("pessoa1", "pessoa2"),
                     help="abre a janela do Pluggy, conecta o MeuPluggy e grava o itemId no config")
     ap.add_argument("--atualizar", action="store_true",
@@ -604,6 +725,8 @@ def principal(argv=None):
     if a.conectar:
         conectar(a.conectar)
         return 0
+    if a.cartao:
+        a.testar = True   # só olha, não grava nada
 
     cfg = ler_config()
     apis = {}    # uma sessão por par de credenciais
@@ -664,9 +787,11 @@ def principal(argv=None):
             print("    %-6s %s" % ("cartão" if tipo == "cartao" else "conta", c.get("name") or c.get("number") or c.get("id")))
             if tipo == "cartao":
                 cd = c.get("creditData") or {}
-                print("           limite %s, disponível %s, fatura vence %s"
-                      % (reais(cd.get("creditLimit")), reais(cd.get("availableCreditLimit")),
-                         data10(cd.get("balanceDueDate")) or "?"))
+                lim, usado, disp, _ = limite_total(cd)
+                print("           limite %s, usado %s, disponível %s, fatura vence %s"
+                      % (reais(lim), reais(usado), reais(disp), data10(cd.get("balanceDueDate")) or "?"))
+                if a.cartao:
+                    diagnostico_cartao(api, c, hoje)
             if a.testar:
                 continue
             # no cartão, até um ano para a frente: parcelas futuras que o banco

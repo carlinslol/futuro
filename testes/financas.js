@@ -288,6 +288,35 @@ const outroAp = N.estadoPadrao();
 N.mesclar(outroAp, pe);
 ok(outroAp.pendentes.p1 && outroAp.conexoes.p1 && outroAp.conexoes.p1.proxima === "2026-10-11T11:00:00Z", "pendentes e conexão vão pelo cofre");
 
+console.log("\n=== parcelas escritas de outros jeitos ===");
+ok(JSON.stringify(N.infoParcela({ descricao: "LOJA X PARC 02/10" })) === '{"k":2,"n":10}', "PARC 02/10");
+ok(N.baseParcela("LOJA X PARC 02/10") === N.baseParcela("LOJA X PARC 03/10"), "PARC 02/10 e PARC 03/10 são a mesma compra");
+ok(N.baseParcela("LOJA X 02/10", 2, 10) === N.baseParcela("LOJA X 03/10", 3, 10), "com k/n do banco, tira o 02/10 solto");
+// o banco manda cada parcela como lançamento, nos meses dela; a última com centavos a mais
+const kp = N.estadoPadrao();
+N.importarPluggy(kp, { transacoes: [
+  { id: "q1", pessoa: "p1", tipo: "cartao", data: "2026-08-05", descricao: "LOJA X PARC 01/03", valor: 33.33, parcela: 1, parcelas: 3, fatura: "2026-09" },
+  { id: "q2", pessoa: "p1", tipo: "cartao", data: "2026-08-05", descricao: "LOJA X PARC 02/03", valor: 33.33, parcela: 2, parcelas: 3, fatura: "2026-10" },
+  { id: "q3", pessoa: "p1", tipo: "cartao", data: "2026-08-05", descricao: "LOJA X PARC 03/03", valor: 33.34, parcela: 3, parcelas: 3, fatura: "2026-11" },
+  { id: "q4", pessoa: "p1", tipo: "cartao", data: "2026-09-20", descricao: "TV 01/10", valor: 250, parcela: 1, parcelas: 10, fatura: "2026-10" },
+  { id: "q5", pessoa: "p1", tipo: "cartao", data: "2026-10-02", descricao: "Mercado", valor: 100, fatura: "2026-10" },
+], cartoes: [{ conta: "c1", pessoa: "p1", vencimento: "2026-10-15", fechamento: "2026-10-08", faturas: [], previstas: [], atualizadoEm: "x" }] });
+const rk = N.resumoCartao(kp, "p1", "2026-10-09");
+ok(perto(rk.meses[0].total, 33.33 + 250 + 100), "fatura de outubro: cada parcela uma vez só", rk.meses[0].total);
+ok(perto(rk.meses[1].total, 33.34 + 250) && rk.meses[1].parcelas === 250, "novembro: a parcela 3/3 que o banco já mandou + a 2/10 projetada", rk.meses[1].total);
+ok(perto(rk.meses[2].total, 250), "dezembro: só a TV", rk.meses[2].total);
+const tv = rk.parcelamentos.find((x) => x.n === 10);
+ok(tv && tv.descricao === "TV" && perto(tv.falta, 2250), "parcelamento da TV: falta 9 de 250", JSON.stringify(tv));
+ok(rk.parcelamentos.filter((x) => /LOJA X/.test(x.descricao)).length === 1, "LOJA X aparece uma vez só nos parcelamentos");
+
+console.log("\n=== data corrigida numa sincronização nova ===");
+const dc = N.estadoPadrao();
+N.importarPluggy(dc, { transacoes: [{ id: "r1", pessoa: "p1", tipo: "cartao", data: "2026-10-10", descricao: "Dl *Riot Games", valor: 30 }] });
+dc.transacoes[0].categoria = "lazer"; dc.transacoes[0].manual = true;
+const rdc = N.importarPluggy(dc, { transacoes: [{ id: "r1", pessoa: "p1", tipo: "cartao", data: "2026-10-09", descricao: "Dl *Riot Games", valor: 30 }] });
+ok(dc.transacoes[0].data === "2026-10-09" && dc.transacoes[0].categoria === "lazer" && rdc.completadas === 1,
+   "transação já guardada com o dia errado é acertada, sem perder a categoria editada", dc.transacoes[0].data);
+
 console.log("\n=== cofre cifrado ===");
 (async () => {
   const c1 = await N.derivarCofre("  minha-senha-do-casal ");

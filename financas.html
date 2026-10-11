@@ -781,6 +781,12 @@ function importarPluggy(e, dados) {
     };
     // transação que já veio antes, sem os dados do cartão: completa (uma vez)
     if (porId[it.id] && copiarCamposCartao(porId[it.id], it)) completadas++;
+    // e se a data mudou (versões antigas do script punham compra da noite no
+    // dia seguinte, pelo fuso), acerta - a data não é editável no app
+    var ja = porId[it.id];
+    if (ja && it.data && ja.data !== it.data && /^\d{4}-\d{2}-\d{2}$/.test(it.data)) {
+      ja.data = it.data; ja.alterado = Date.now(); completadas++;
+    }
     (porConta[conta] = porConta[conta] || []).push(it);
   });
   var tot = { novas: 0, repetidas: 0, cartoes: 0, completadas: completadas };
@@ -1069,10 +1075,12 @@ function resumoMes(e, mes) {
       fechamento cai na fatura que fecha naquele mês; no dia ou depois, na
       do mês seguinte. Sem os dias, fica o mês da compra (estimativa). */
 
+/* "Parcela 2/5", "PARC 02/10", "parc. 3 de 12" */
+var RE_PARCELA = /(?:parcela|parc\.?)\s*0*(\d{1,2})\s*(?:\/|de)\s*0*(\d{1,2})/i;
 function infoParcela(t) {
   var k = Number(t.parcela), n = Number(t.parcelas);
   if (n > 1 && k >= 1 && k <= n) return { k: k, n: n };
-  var m = /parcela\s*(\d{1,2})\s*(?:\/|de)\s*(\d{1,2})/i.exec(t.descricao || "");
+  var m = RE_PARCELA.exec(t.descricao || "");
   if (m) {
     k = Number(m[1]); n = Number(m[2]);
     if (n > 1 && k >= 1 && k <= n) return { k: k, n: n };
@@ -1080,8 +1088,12 @@ function infoParcela(t) {
   return null;
 }
 /* "Amazon - Parcela 3/10" e "Amazon - Parcela 4/10" são a mesma compra. */
-function baseParcela(descricao) {
-  return normalizar(String(descricao || "").replace(/[-–]?\s*parcela\s*\d{1,2}\s*(?:\/|de)\s*\d{1,2}/i, ""));
+/* A descrição sem a marca da parcela, para juntar as parcelas da mesma
+   compra. Com k e n conhecidos (do banco), tira também o "02/10" solto. */
+function baseParcela(descricao, k, n) {
+  var d = String(descricao || "").replace(/[-–]?\s*(?:parcela|parc\.?)\s*\d{1,2}\s*(?:\/|de)\s*\d{1,2}/i, "");
+  if (k && n) d = d.replace(new RegExp("\\b0*" + k + "\\s*(?:\\/|de)\\s*0*" + n + "\\b", "i"), "");
+  return normalizar(d);
 }
 
 /* Os dados do cartão de uma pessoa: o que o banco mandou (Pluggy) mais os
@@ -1139,7 +1151,14 @@ function resumoCartao(e, p, hoje) {
     m.itens.push({ descricao: t.descricao, valor: t.valor, data: t.data, tipo: "lancado" });
     var pc = infoParcela(t);
     if (pc) {
-      var chave = baseParcela(t.descricao) + "|" + pc.n + "|" + Math.round(Math.abs(t.valor) * 100);
+      // mesma compra = mesma loja, mesmo número de parcelas e valor parecido
+      // (a última parcela costuma vir com centavos de diferença)
+      var grupo = baseParcela(t.descricao, pc.k, pc.n) + "|" + pc.n, chave = null;
+      Object.keys(series).forEach(function (c) {
+        if (!chave && c.indexOf(grupo + "|") === 0 &&
+            Math.abs(Math.abs(series[c].valor) - Math.abs(t.valor)) <= Math.max(1, Math.abs(t.valor) * 0.02)) chave = c;
+      });
+      if (!chave) chave = grupo + "|" + Object.keys(series).length;
       var s = series[chave] = series[chave] || { descricao: t.descricao, valor: t.valor, n: pc.n, vistas: {}, ultima: null };
       s.vistas[pc.k] = mes;
       if (!s.ultima || pc.k > s.ultima.k) { s.ultima = { k: pc.k, mes: mes }; s.descricao = t.descricao; }
@@ -1155,7 +1174,7 @@ function resumoCartao(e, p, hoje) {
     m.previsto += Number(x.valor) || 0;
     m.itens.push({ descricao: x.descricao, valor: Number(x.valor) || 0, data: x.data, tipo: "previsto" });
     var pc = infoParcela(x);
-    if (pc) previstasPorChave[baseParcela(x.descricao) + "|" + pc.n + "|" + pc.k] = true;
+    if (pc) previstasPorChave[baseParcela(x.descricao, pc.k, pc.n) + "|" + pc.n + "|" + pc.k] = true;
   });
 
   // parcelas que ainda vão cair: k+1..n nos meses seguintes ao da última vista
@@ -1168,13 +1187,14 @@ function resumoCartao(e, p, hoje) {
       var mes = somarMes(u.mes, j - u.k);
       var m = no(mes);
       m.parcelas += s.valor;
-      m.itens.push({ descricao: s.descricao.replace(/(parcela\s*)\d{1,2}/i, "$1" + j), valor: s.valor, tipo: "parcela" });
+      m.itens.push({ descricao: s.descricao.replace(/((?:parcela|parc\.?)\s*)\d{1,2}/i, "$1" + j), valor: s.valor, tipo: "parcela" });
       restantes++;
     }
     var termina = somarMes(u.mes, s.n - u.k);
     if (termina >= aberta) {
       parcelamentos.push({
-        descricao: s.descricao.replace(/\s*[-–]?\s*parcela\s*\d{1,2}\s*(?:\/|de)\s*\d{1,2}/i, ""),
+        descricao: s.descricao.replace(/\s*[-–]?\s*(?:parcela|parc\.?)\s*\d{1,2}\s*(?:\/|de)\s*\d{1,2}/i, "")
+          .replace(new RegExp("\\s*\\b0*" + u.k + "\\s*\\/\\s*0*" + s.n + "\\b"), "").trim(),
         k: u.k, n: s.n, valor: arred(s.valor), falta: arred(s.valor * (s.n - u.k)), termina: termina
       });
     }
@@ -1207,10 +1227,11 @@ function resumoCartao(e, p, hoje) {
 
   var info = null;
   if (banco) {
-    var limite = Number(banco.limite), disp = Number(banco.disponivel);
+    var limite = Number(banco.limite), disp = Number(banco.disponivel), usado = Number(banco.usado);
     info = {
       limite: isFinite(limite) && banco.limite != null ? limite : null,
       disponivel: isFinite(disp) && banco.disponivel != null ? disp : null,
+      usado: isFinite(usado) && banco.usado != null ? usado : null,
       saldo: banco.saldo != null ? Number(banco.saldo) : null,
       minimo: banco.minimo != null ? Number(banco.minimo) : null,
       fechamento: banco.fechamento || null, vencimento: banco.vencimento || null,
@@ -1887,7 +1908,7 @@ function desenharCartao() {
     // limite
     if (r.info && r.info.limite) {
       var disp = r.info.disponivel != null ? r.info.disponivel : null;
-      var usado = disp != null ? r.info.limite - disp : null;
+      var usado = r.info.usado != null ? r.info.usado : disp != null ? r.info.limite - disp : null;
       var pc = usado != null ? Math.max(0, Math.min(100, usado / r.info.limite * 100)) : 0;
       h += '<div class="limite"><div class="sub">Limite</div>' +
         '<div class="limite-trilho" data-dica="Usado ' + esc(brl(usado)) + " de " + esc(brl(r.info.limite)) + '">' +
