@@ -17,3 +17,9 @@ __pycache__/
 # log da tarefa agendada (agendar.bat)
 sincronizar.log
 sincronizar.log.old
+
+# impeccable: capturas de revisão e estado de sessão (o brief em
+# .impeccable/surfaces/ e o design.json vão para o repositório)
+.impeccable/review/
+.impeccable/questions/
+.impeccable/config.local.json
