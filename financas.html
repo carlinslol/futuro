@@ -455,7 +455,8 @@ pre { background: var(--jornal); padding: 10px 12px; overflow-x: auto; font-size
   .topo-dentro { padding: 0 16px; min-height: 52px; gap: 10px; }
   .tema-btn { width: 44px; height: 44px; }
   .aparencia { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .aparencia label { justify-content: center; padding: 9px 6px; }
+  .aparencia label { position: relative; justify-content: center; padding: 9px 8px; }
+  .aparencia input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
   .vazio-com-clo { flex-direction: column; gap: 12px; }
   .vazio-com-clo > svg { width: 88px; height: 99px; }
   .vazio-lista.vazio-com-clo { flex-direction: row; }
