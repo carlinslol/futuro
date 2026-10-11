@@ -117,7 +117,9 @@ class Falso(BaseHTTPRequestHandler):
                 return self._json(400, {"message": "bills not available"})
             return self._json(200, {"results": [{"id": "b9", "dueDate": "2026-09-15T00:00:00.000Z",
                                                  "billClosingDate": "2026-09-08T00:00:00.000Z",
-                                                 "totalAmount": 980.5, "minimumPaymentAmount": 147}]})
+                                                 "totalAmount": 980.5, "minimumPaymentAmount": 147,
+                                                 "payments": [{"amount": 500, "paymentDate": "2026-09-10"},
+                                                              {"amount": 480.5, "paymentDate": "2026-09-14"}]}]})
         if u.path == "/transactions":   # como o Pluggy de verdade hoje
             return self._json(410, {"message": "This endpoint is deprecated. Use GET /v2/transactions "
                                                "with cursor pagination instead.", "code": 410})
@@ -268,6 +270,10 @@ ok(cb_.get("fonteLimite") == "creditData", "sem linhas detalhadas, usa o creditD
 lt = F.limite_total({"disaggregatedCreditLimits": [{"creditLineLimitType": "LIMITE_CREDITO_TOTAL", "usedAmount": 100, "availableAmount": 900}]})
 ok(lt[:3] == (1000, 100, 900), "linha total sem limitAmount: soma usado + disponível", lt)
 ok(ca.get("fechamento") == "2026-10-08" and ca.get("vencimento") == "2026-10-15" and ca.get("saldo") == 1234.5, "fechamento e vencimento")
+ok(ca.get("faturas") and ca["faturas"][0].get("pago") == 980.5, "quanto foi pago na fatura (soma dos pagamentos)", ca.get("faturas"))
+lt2 = F.limite_total({"disaggregatedCreditLimits": [{"creditLineLimitType": "LIMITE_CREDITO_TOTAL", "limitAmount": 13700,
+                                                     "usedAmount": 5822.32, "availableAmount": 42.68}]})
+ok(lt2[2] == 7877.68, "disponível furado do banco (42,68): vale limite - usado", lt2)
 ok(len(ca.get("faturas", [])) == 1 and ca["faturas"][0]["vencimento"] == "2026-09-15" and ca["faturas"][0]["total"] == 980.5,
    "faturas fechadas", ca.get("faturas"))
 ok([x["descricao"] for x in ca.get("previstas", [])] == ["Compra pendente"] and ca["previstas"][0]["valor"] == 10,

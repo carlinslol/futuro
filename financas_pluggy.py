@@ -398,8 +398,10 @@ def limite_total(cd):
             lim, usado, disp = l.get("limitAmount"), l.get("usedAmount"), l.get("availableAmount")
             if lim is None and usado is not None and disp is not None:
                 lim = usado + disp
-            if disp is None and lim is not None and usado is not None:
-                disp = lim - usado
+            if lim is not None and usado is not None:
+                # o availableAmount pode vir furado (Nubank: R$ 42,68 com ~7,7
+                # mil livres); o usado vem certo, e o livre é limite - usado
+                disp = round(lim - usado, 2)
             if usado is None and lim is not None and disp is not None:
                 usado = lim - disp
             if lim is not None:
@@ -415,9 +417,11 @@ def dados_do_cartao(api, c, pessoa, pendentes):
     faturas = []
     try:
         for b in api.faturas(c["id"]):
+            pagos = [p.get("amount") for p in (b.get("payments") or []) if p.get("amount") is not None]
             faturas.append({"id": b.get("id"), "vencimento": data10(b.get("dueDate")),
                             "fechamento": data10(b.get("billClosingDate")),
-                            "total": b.get("totalAmount"), "minimo": b.get("minimumPaymentAmount")})
+                            "total": b.get("totalAmount"), "minimo": b.get("minimumPaymentAmount"),
+                            "pago": round(sum(abs(float(v)) for v in pagos), 2) if pagos else None})
     except Erro as e:
         print("           (faturas fechadas não vieram: %s)" % str(e)[:80])
     faturas.sort(key=lambda b: b["vencimento"] or "", reverse=True)

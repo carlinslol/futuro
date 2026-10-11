@@ -1131,13 +1131,35 @@ function faturaDa(cartao, t) {
 }
 
 /* Tudo o que a aba Cartão mostra de uma pessoa. hoje = "AAAA-MM-DD". */
+/* Pagamento da fatura e afins não são compra: não entram na soma de
+   fatura nenhuma (no Open Finance o pagamento da fatura fechada aparece
+   como crédito na fatura seguinte - e a deixava negativa). */
+function naoEhCompra(e, conta, x) {
+  var v = Number(x.valor) || 0;
+  var cat = x.categoria || categorizar(e, x.descricao, v, conta, x.categoriaPluggy).categoria;
+  if (cat === "fora") return true;
+  var d = normalizar(x.descricao);
+  return v < 0 && /\bpagamento\b/.test(d) && !/\bestorno\b/.test(d);
+}
+
 function resumoCartao(e, p, hoje) {
   var cartao = cartaoDe(e, p), banco = cartao.banco;
   var conta = p + "-cartao";
-  var doCartao = e.transacoes.filter(function (t) { return t.conta === conta && t.categoria !== "fora"; });
+  var doCartao = e.transacoes.filter(function (t) { return t.conta === conta && !naoEhCompra(e, conta, t); });
+  var bills = ((banco && banco.faturas) || []).filter(function (b) { return b.vencimento; })
+    .sort(function (a, b) { return a.vencimento < b.vencimento ? 1 : -1; });
 
-  // fatura aberta: a do banco, se veio; senão, a de uma compra feita hoje
-  var aberta = banco && banco.vencimento ? mesDe(banco.vencimento) : mesDaFatura(cartao, hoje);
+  /* Fatura aberta (a "fatura atual" do app do banco):
+     - com a lista de faturas fechadas, é a seguinte à última fechada;
+     - senão, o vencimento informado pelo banco - que no Open Finance é o da
+       fatura fechada quando ela já fechou e ainda não venceu;
+     - sem banco, a de uma compra feita hoje. */
+  var fechada = bills[0] || null, aberta;
+  if (fechada) aberta = somarMes(mesDe(fechada.vencimento), 1);
+  else if (banco && banco.vencimento)
+    aberta = banco.fechamento && banco.fechamento <= hoje ? somarMes(mesDe(banco.vencimento), 1) : mesDe(banco.vencimento);
+  else aberta = mesDaFatura(cartao, hoje);
+  if (banco && banco.vencimento && mesDe(banco.vencimento) > aberta) aberta = mesDe(banco.vencimento);
 
   var porMes = {};
   function no(mes) {
@@ -1166,8 +1188,10 @@ function resumoCartao(e, p, hoje) {
   });
 
   // o que o banco já prevê (compras pendentes e parcelas futuras, Open Finance)
-  var previstasPorChave = {};
+  var previstasPorChave = {}, bancoPrevêParcelas = false;
   ((banco && banco.previstas) || []).forEach(function (x) {
+    if (infoParcela(x)) bancoPrevêParcelas = true;
+    if (naoEhCompra(e, conta, x)) return;
     var mes = x.fatura && /^\d{4}-\d{2}$/.test(x.fatura) ? x.fatura : mesDaFatura(cartao, x.data || hoje);
     if (mes < aberta) return;
     var m = no(mes);
@@ -1183,6 +1207,9 @@ function resumoCartao(e, p, hoje) {
     var s = series[chave], u = s.ultima, base = chave.split("|")[0];
     var restantes = 0;
     for (var j = u.k + 1; j <= s.n; j++) {
+      // o banco já manda as parcelas futuras: as dele valem, nada de projetar
+      // (a descrição às vezes muda entre parcelas e a mesma contaria duas vezes)
+      if (bancoPrevêParcelas) break;
       if (s.vistas[j] || previstasPorChave[base + "|" + s.n + "|" + j]) continue;
       var mes = somarMes(u.mes, j - u.k);
       var m = no(mes);
@@ -1199,6 +1226,35 @@ function resumoCartao(e, p, hoje) {
       });
     }
   });
+  // com as parcelas futuras vindas do banco, os parcelamentos saem delas:
+  // a parcela da fatura aberta (ou a próxima), quanto falta e até quando
+  if (bancoPrevêParcelas) {
+    parcelamentos = [];
+    var grupos = {};
+    ((banco && banco.previstas) || []).forEach(function (x) {
+      var pc = infoParcela(x);
+      if (!pc || naoEhCompra(e, conta, x)) return;
+      var mes = x.fatura && /^\d{4}-\d{2}$/.test(x.fatura) ? x.fatura : mesDaFatura(cartao, x.data || hoje);
+      if (mes < aberta) return;
+      var v = Number(x.valor) || 0, base = baseParcela(x.descricao, pc.k, pc.n) + "|" + pc.n, chave = null;
+      Object.keys(grupos).forEach(function (c) {
+        if (!chave && c.indexOf(base + "|") === 0 && Math.abs(grupos[c].valor - v) <= Math.max(1, v * 0.02)) chave = c;
+      });
+      if (!chave) chave = base + "|" + Object.keys(grupos).length;
+      var g = grupos[chave] = grupos[chave] || { descricao: x.descricao, valor: v, n: pc.n, k: pc.k, falta: 0, termina: mes };
+      g.falta += v;
+      if (pc.k < g.k) { g.k = pc.k; g.descricao = x.descricao; }
+      if (mes > g.termina) g.termina = mes;
+    });
+    Object.keys(grupos).forEach(function (c) {
+      var g = grupos[c];
+      parcelamentos.push({
+        descricao: g.descricao.replace(/\s*[-–]?\s*(?:parcela|parc\.?)\s*\d{1,2}\s*(?:\/|de)\s*\d{1,2}/i, "")
+          .replace(new RegExp("\\s*\\b0*" + g.k + "\\s*\\/\\s*0*" + g.n + "\\b"), "").trim(),
+        k: g.k, n: g.n, valor: arred(g.valor), falta: arred(g.falta), termina: g.termina
+      });
+    });
+  }
   parcelamentos.sort(function (a, b) { return a.termina < b.termina ? 1 : a.termina > b.termina ? -1 : b.falta - a.falta; });
 
   var meses = [];
@@ -1210,12 +1266,12 @@ function resumoCartao(e, p, hoje) {
     });
   }
 
-  // faturas anteriores: as do banco; sem banco, a soma das compras
+  // faturas anteriores: as do banco (menos a fechada, que vai à parte);
+  // sem banco, a soma das compras
   var anteriores = [];
-  var bills = (banco && banco.faturas) || [];
   if (bills.length) {
     bills.forEach(function (b) {
-      if (b.vencimento && mesDe(b.vencimento) < aberta)
+      if (b !== fechada && mesDe(b.vencimento) < aberta)
         anteriores.push({ mes: mesDe(b.vencimento), total: arred(Number(b.total) || 0), vencimento: b.vencimento, fonte: "banco" });
     });
   } else {
@@ -1228,19 +1284,47 @@ function resumoCartao(e, p, hoje) {
   var info = null;
   if (banco) {
     var limite = Number(banco.limite), disp = Number(banco.disponivel), usado = Number(banco.usado);
+    var temLim = isFinite(limite) && banco.limite != null, temUsado = isFinite(usado) && banco.usado != null;
+    // o "disponível" do Open Finance pode vir furado (Nubank: R$ 42,68 com
+    // ~R$ 7,7 mil livres); o usado vem certo, e limite - usado é o livre
+    if (temLim && temUsado) disp = limite - usado;
     info = {
-      limite: isFinite(limite) && banco.limite != null ? limite : null,
-      disponivel: isFinite(disp) && banco.disponivel != null ? disp : null,
-      usado: isFinite(usado) && banco.usado != null ? usado : null,
-      saldo: banco.saldo != null ? Number(banco.saldo) : null,
-      minimo: banco.minimo != null ? Number(banco.minimo) : null,
-      fechamento: banco.fechamento || null, vencimento: banco.vencimento || null,
+      limite: temLim ? limite : null,
+      disponivel: isFinite(disp) && (banco.disponivel != null || temUsado) ? arred(disp) : null,
+      usado: temUsado ? usado : null,
       bandeira: banco.bandeira || "", nome: banco.nome || "", atualizadoEm: banco.atualizadoEm || null
     };
   }
+
+  // a fatura fechada mais recente: valor do banco, mínimo e se já foi paga
+  var fechadaInfo = null;
+  if (fechada) {
+    var total = Number(fechada.total) || 0;
+    var pago = fechada.pago != null ? Number(fechada.pago) : null;
+    if (pago == null || pago < total - 0.01) {
+      // sem a lista de pagamentos: procura o crédito do pagamento depois do fechamento
+      var depois = (fechada.fechamento || fechada.vencimento);
+      var pagamentos = e.transacoes.filter(function (t) { return t.conta === conta && t.data >= depois; })
+        .concat(((banco && banco.previstas) || []))
+        .filter(function (x) { return Number(x.valor) < 0 && naoEhCompra(e, conta, x); });
+      var soma = pagamentos.reduce(function (a, x) { return a - Number(x.valor); }, 0);
+      if (pago == null || soma > pago) pago = soma;
+    }
+    fechadaInfo = {
+      vencimento: fechada.vencimento, fechamento: fechada.fechamento || null, total: arred(total),
+      minimo: fechada.minimo != null ? Number(fechada.minimo) : (banco && banco.vencimento === fechada.vencimento && banco.minimo != null ? Number(banco.minimo) : null),
+      pago: arred(pago || 0), paga: (pago || 0) >= total - 0.01
+    };
+  }
+  // datas da fatura aberta: o mesmo dia de fechamento e vencimento, um mês depois
+  var abertaFecha = null, abertaVence = null;
+  var diaF = fechada && fechada.fechamento ? fechada.fechamento.slice(8, 10) : (cartao.diaFechamento ? ("0" + cartao.diaFechamento).slice(-2) : null);
+  var diaV = fechada ? fechada.vencimento.slice(8, 10) : (cartao.diaVencimento ? ("0" + cartao.diaVencimento).slice(-2) : null);
+  if (diaV) abertaVence = aberta + "-" + diaV;
+  if (diaF && diaV) abertaFecha = (Number(diaF) < Number(diaV) ? aberta : somarMes(aberta, -1)) + "-" + diaF;
   return {
     temDados: doCartao.length > 0 || !!banco,
-    aberta: aberta, info: info,
+    aberta: aberta, info: info, fechada: fechadaInfo, abertaFecha: abertaFecha, abertaVence: abertaVence,
     diaFechamento: cartao.diaFechamento, diaVencimento: cartao.diaVencimento,
     estimado: !banco && !cartao.diaFechamento,
     meses: meses, parcelamentos: parcelamentos.slice(0, 50), anteriores: anteriores.slice(0, 6)
@@ -1917,21 +2001,29 @@ function desenharCartao() {
         (disp != null ? " · disponível <strong>" + brl(disp) + "</strong>" : "") + "</div></div>";
     }
 
-    // fatura atual
+    // fatura atual (aberta)
     var atual = r.meses[0];
     var datas = [];
-    if (r.info && r.info.fechamento) datas.push("fecha " + dataBR(r.info.fechamento));
+    if (r.abertaFecha) datas.push("fecha " + dataBR(r.abertaFecha));
     else if (r.diaFechamento) datas.push("fecha dia " + r.diaFechamento);
-    if (r.info && r.info.vencimento) datas.push("vence " + dataBR(r.info.vencimento));
+    if (r.abertaVence) datas.push("vence " + dataBR(r.abertaVence));
     else if (r.diaVencimento) datas.push("vence dia " + r.diaVencimento);
-    h += '<div class="sub">Fatura atual · vence em ' + MESES[Number(r.aberta.slice(5, 7)) - 1] + "</div>";
+    h += '<div class="sub">Fatura atual (aberta) · ' + MESES[Number(r.aberta.slice(5, 7)) - 1] + "</div>";
     h += '<div class="fatura-atual"><span class="valor">' + brl(atual.total) + "</span>" +
       (datas.length ? '<span class="sub">' + esc(datas.join(" · ")) + "</span>" : "") + "</div>";
-    var notas = [];
-    if (r.info && r.info.minimo) notas.push("mínimo " + brl(r.info.minimo));
-    if (r.info && r.info.saldo != null) notas.push("saldo informado pelo banco: " + brl(r.info.saldo));
-    if (atual.parcelas || atual.previsto) notas.push("inclui " + brl(atual.parcelas + atual.previsto) + " de parcelas/lançamentos ainda não fechados");
-    if (notas.length) h += '<p class="nota">' + esc(notas.join(" · ")) + "</p>";
+    if (r.info && (atual.previsto || atual.lancado)) h += '<p class="nota">Pelos lançamentos que o banco já informou; compras dos últimos dias podem ainda não ter chegado.</p>';
+
+    // fatura fechada: valor exato do banco
+    if (r.fechada) {
+      var f = r.fechada, venceu = f.vencimento < hoje;
+      var situacao = f.paga ? '<span style="color:var(--bom)">✓ paga</span>'
+        : f.pago > 0 ? "pago " + brl(f.pago) + " de " + brl(f.total)
+        : venceu ? '<span style="color:var(--ruim)">⚠ venceu em ' + dataBR(f.vencimento) + "</span>"
+        : "a pagar até " + dataBR(f.vencimento);
+      h += '<p class="nota" style="margin-top:10px">Fatura fechada de ' + MESES[Number(f.vencimento.slice(5, 7)) - 1] +
+        " (vence " + dataBR(f.vencimento) + "): <strong>" + brl(f.total) + "</strong>" +
+        (f.minimo && !f.paga ? " · mínimo " + brl(f.minimo) : "") + " · " + situacao + "</p>";
+    }
     if (r.estimado) h += '<p class="nota">Estimativa pelo mês das compras. Para acertar o ciclo, ponha os dias de fechamento e vencimento em <a href="#" data-ir="config">Configurar</a>.</p>';
 
     // próximas faturas

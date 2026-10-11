@@ -232,13 +232,14 @@ const DADOS_CARTAO = { geradoEm: "2026-10-09T10:00:00Z", transacoes: [
 let ri = N.importarPluggy(kb, DADOS_CARTAO);
 ok(ri.novas === 3 && ri.cartoes === 1, "transações e dados do cartão chegam", JSON.stringify(ri));
 rc = N.resumoCartao(kb, "p2", "2026-10-09");
-ok(rc.info && rc.info.limite === 5000 && rc.info.disponivel === 3800 && rc.info.minimo === 180 && !rc.estimado, "limite, disponível e mínimo do banco");
+ok(rc.info && rc.info.limite === 5000 && rc.info.disponivel === 3800 && !rc.estimado, "limite e disponível do banco");
+ok(rc.fechada && rc.fechada.total === 980.5 && rc.fechada.minimo === 147, "fatura fechada com o valor e o mínimo do banco", JSON.stringify(rc.fechada));
 ok(rc.aberta === "2026-10", "fatura aberta é a do vencimento informado pelo banco");
 ok(perto(rc.meses[0].lancado, 170), "fatura de outubro pela previsão do banco", rc.meses[0].lancado);
 const nov2 = rc.meses[1], dez2 = rc.meses[2];
 ok(perto(nov2.previsto, 50) && nov2.parcelas === 0, "parcela 2 prevista pelo banco não é contada de novo", JSON.stringify([nov2.previsto, nov2.parcelas]));
-ok(perto(dez2.parcelas, 50), "parcela 3 projetada para dezembro");
-ok(rc.anteriores.length === 1 && rc.anteriores[0].total === 980.5 && rc.anteriores[0].fonte === "banco", "faturas fechadas do banco");
+ok(dez2.parcelas === 0, "com o banco mandando as parcelas futuras, o app não projeta as dele");
+ok(rc.anteriores.length === 0, "a fechada vai à parte, não nas anteriores");
 ok(!rc.meses.some((m) => m.itens.some((i) => i.descricao === "Loja velha")), "compra de fatura já fechada fica na fatura dela (setembro)");
 
 const velha = { geradoEm: "x", transacoes: [], cartoes: [Object.assign({}, DADOS_CARTAO.cartoes[0], { limite: 1, atualizadoEm: "2026-10-01T00:00:00Z" })] };
@@ -301,13 +302,54 @@ N.importarPluggy(kp, { transacoes: [
   { id: "q4", pessoa: "p1", tipo: "cartao", data: "2026-09-20", descricao: "TV 01/10", valor: 250, parcela: 1, parcelas: 10, fatura: "2026-10" },
   { id: "q5", pessoa: "p1", tipo: "cartao", data: "2026-10-02", descricao: "Mercado", valor: 100, fatura: "2026-10" },
 ], cartoes: [{ conta: "c1", pessoa: "p1", vencimento: "2026-10-15", fechamento: "2026-10-08", faturas: [], previstas: [], atualizadoEm: "x" }] });
-const rk = N.resumoCartao(kp, "p1", "2026-10-09");
+const rk = N.resumoCartao(kp, "p1", "2026-10-07");   // antes do fechamento (08/10): outubro ainda aberta
 ok(perto(rk.meses[0].total, 33.33 + 250 + 100), "fatura de outubro: cada parcela uma vez só", rk.meses[0].total);
 ok(perto(rk.meses[1].total, 33.34 + 250) && rk.meses[1].parcelas === 250, "novembro: a parcela 3/3 que o banco já mandou + a 2/10 projetada", rk.meses[1].total);
 ok(perto(rk.meses[2].total, 250), "dezembro: só a TV", rk.meses[2].total);
 const tv = rk.parcelamentos.find((x) => x.n === 10);
 ok(tv && tv.descricao === "TV" && perto(tv.falta, 2250), "parcelamento da TV: falta 9 de 250", JSON.stringify(tv));
 ok(rk.parcelamentos.filter((x) => /LOJA X/.test(x.descricao)).length === 1, "LOJA X aparece uma vez só nos parcelamentos");
+
+console.log("\n=== cartão de verdade (Nubank pelo Open Finance) ===");
+// como no diagnóstico real: a fatura que vence 13/10 fechou em 06/10 e foi
+// paga; o vencimento informado é o dela; o pagamento aparece como crédito
+// pendente na fatura de novembro; as parcelas futuras vêm todas do banco;
+// e o "disponível" vem furado em todas as linhas.
+const nu = N.estadoPadrao();
+N.importarPluggy(nu, { geradoEm: "2026-10-11T08:00:00-03:00", transacoes: [
+  { id: "o1", pessoa: "p1", tipo: "cartao", data: "2026-09-06", descricao: "Capital Joalheria", valor: 630, billId: "out" },
+  { id: "o2", pessoa: "p1", tipo: "cartao", data: "2026-09-06", descricao: "Art Viagens 2/3", valor: 423.16, parcela: 2, parcelas: 3, billId: "out" },
+  { id: "o3", pessoa: "p1", tipo: "cartao", data: "2026-09-10", descricao: "Pagamento recebido", valor: -5832.78, billId: "out" },
+  { id: "s1", pessoa: "p1", tipo: "cartao", data: "2026-08-26", descricao: 'Parcelamento de Compra "Amazon B', valor: 241.14, parcela: 1, parcelas: 6, billId: "set" },
+], cartoes: [{ conta: "nu", pessoa: "p1", nome: "croma-platinum", limite: 13700, usado: 5822.32, disponivel: 42.68,
+  minimo: 1786.52, vencimento: "2026-10-13", fechamento: null,
+  faturas: [{ id: "out", vencimento: "2026-10-13", fechamento: "2026-10-06", total: 7383.56 },
+            { id: "set", vencimento: "2026-09-14", fechamento: "2026-09-06", total: 5832.78 }],
+  previstas: [
+    { descricao: "Pagamento recebido", valor: -7383.56, data: "2026-10-09", fatura: "2026-11" },
+    { descricao: "Art Viagens 3/3", valor: 423.16, data: "2026-10-06", fatura: "2026-11", parcela: 3, parcelas: 3 },
+    { descricao: "Parcelamento de Compra", valor: 241.14, data: "2026-10-06", fatura: "2026-11", parcela: 3, parcelas: 6 },
+    { descricao: "Parcelamento de Compra", valor: 241.14, data: "2026-11-06", fatura: "2026-12", parcela: 4, parcelas: 6 },
+    { descricao: "Dl *Riot Games", valor: 75.90, data: "2026-10-09", fatura: "2026-11" },
+    { descricao: "Steamgames.Com", valor: 104.03, data: "2026-10-09", fatura: "2026-11" }],
+  atualizadoEm: "2026-10-11T08:00:00-03:00" }] });
+const rn = N.resumoCartao(nu, "p1", "2026-10-11");
+ok(rn.aberta === "2026-11", "a fatura atual é a de novembro (a de outubro já fechou)", rn.aberta);
+ok(perto(rn.meses[0].total, 423.16 + 241.14 + 75.90 + 104.03), "novembro soma as compras, sem o pagamento da fatura anterior", rn.meses[0].total);
+ok(rn.meses[0].total > 0 && perto(rn.meses[1].total, 241.14), "dezembro: só a parcela que o banco previu (nada projetado em dobro)", rn.meses[1].total);
+ok(rn.fechada && rn.fechada.total === 7383.56 && rn.fechada.paga && rn.fechada.vencimento === "2026-10-13", "outubro: fechada, R$ 7.383,56, paga", JSON.stringify(rn.fechada));
+ok(rn.abertaVence === "2026-11-13" && rn.abertaFecha === "2026-11-06", "datas da aberta: fecha 06/11, vence 13/11", rn.abertaFecha + " / " + rn.abertaVence);
+ok(perto(rn.info.disponivel, 13700 - 5822.32) && rn.info.usado === 5822.32, "disponível = limite - usado (não os R$ 42,68 do banco)", rn.info.disponivel);
+ok(rn.anteriores.length === 1 && rn.anteriores[0].mes === "2026-09" && rn.anteriores[0].total === 5832.78, "setembro nas anteriores, com o valor do banco");
+const pcs = rn.parcelamentos;
+const pcCompra = pcs.find((x) => x.descricao === "Parcelamento de Compra");
+ok(pcs.length === 2 && pcCompra && pcCompra.k === 3 && pcCompra.n === 6 && perto(pcCompra.falta, 482.28) && pcCompra.termina === "2026-12",
+   "parcelamentos montados das parcelas que o banco mandou", JSON.stringify(pcs));
+ok(pcs.some((x) => x.descricao === "Art Viagens" && x.k === 3 && x.n === 3 && perto(x.falta, 423.16)), "Art Viagens 3/3 na fatura aberta");
+const semPagar = JSON.parse(JSON.stringify(nu));
+semPagar.cartoes.nu.previstas = semPagar.cartoes.nu.previstas.filter((x) => x.valor > 0);
+const rs2 = N.resumoCartao(semPagar, "p1", "2026-10-11");
+ok(!rs2.fechada.paga && rs2.fechada.minimo === 1786.52, "sem o pagamento: fechada a pagar, com o mínimo");
 
 console.log("\n=== data corrigida numa sincronização nova ===");
 const dc = N.estadoPadrao();
