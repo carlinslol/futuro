@@ -49,6 +49,8 @@ TRANS = {
     "ba": [
         {"id": "t4", "date": "2026-10-04T00:00:00.000Z", "description": "Salário", "amount": 5000.0, "type": "CREDIT"},
         {"id": "t5", "date": "2026-10-05T00:00:00.000Z", "description": "Pix aluguel", "amount": -1800.0, "type": "DEBIT"},
+        {"id": "p9", "date": "2026-10-10T00:00:00.000Z", "description": "Padaria de sábado", "amount": -23.5,
+         "type": "DEBIT", "status": "PENDING", "category": "Bakery"},
     ],
     "cb": [
         {"id": "t6", "date": "2026-10-06T00:00:00.000Z", "description": "Compra USD", "amount": 10.0,
@@ -88,7 +90,9 @@ class Falso(BaseHTTPRequestHandler):
 
     def do_PATCH(self):
         # o conector MeuPluggy não deixa atualizar pela API
-        self._json(400, {"message": "MeuPluggy items cannot be updated"})
+        corpo = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+        pedidos.append(("PATCH " + self.path, corpo))
+        self._json(400, {"message": "MeuPluggy item cant be updated"})
 
     def do_GET(self):
         u = urlparse(self.path)
@@ -98,7 +102,9 @@ class Falso(BaseHTTPRequestHandler):
             return self._json(403, {"message": "item de outro titular"})
         pedidos.append((u.path, q))
         if u.path.startswith("/items/"):
-            return self._json(200, {"id": u.path[7:], "status": "UPDATED", "connector": {"name": "Nubank"}})
+            return self._json(200, {"id": u.path[7:], "status": "UPDATED", "connector": {"name": "MeuPluggy"},
+                                    "lastUpdatedAt": "2026-10-09T11:00:00.000Z",
+                                    "nextAutoSyncAt": "2026-10-10T11:00:00.000Z" if u.path.endswith("a") else None})
         if u.path == "/accounts":
             return self._json(200, {"results": CONTAS.get(q["itemId"], [])})
         if u.path == "/bills":
@@ -202,6 +208,8 @@ ok(cod == 0 and "OK" in txt and not os.path.exists(F.SAIDA), "--testar não grav
 ok(txt.count("Nubank") >= 2, "dois titulares, cada um com a própria aplicação")
 cod, txt = rodar("--testar", "--atualizar")
 ok(cod == 0 and "sigo com o que já existe" in txt, "MeuPluggy recusando atualizar não derruba o script", txt.count("sigo"))
+patches = [q for p, q in pedidos if p.startswith("PATCH /items/")]
+ok(patches and all(q.get("id") for q in patches), "PATCH com o id no corpo, como o SDK oficial", patches[:1])
 
 print("\n=== sincronizar ===")
 cod, txt = rodar("--dias", "30")
@@ -234,6 +242,20 @@ ok([x["descricao"] for x in ca.get("previstas", [])] == ["Compra pendente"] and 
 ok("cb" in cart and cart["cb"]["faturas"] == [], "cartão sem /bills no banco: segue sem as faturas fechadas")
 datas_ate = {q["accountId"]: q["dateTo"] for p, q in pedidos if p == "/v2/transactions"}
 ok(datas_ate.get("ca", "") > datas_ate.get("ba", "9"), "no cartão busca também o que já está lançado para o futuro", datas_ate)
+import datetime as _dt
+ok(datas_ate.get("ba") == (_dt.date.today() + _dt.timedelta(days=1)).isoformat(), "na conta pede até amanhã (não corta o que entrou hoje)", datas_ate.get("ba"))
+
+print("\n=== pendentes e quando o Pluggy buscou no banco ===")
+ok("p9" not in por, "pendente da conta não vira transação (o id muda quando fecha)")
+pend = dados.get("pendentes", {})
+ok([x["descricao"] for x in pend.get("p1", {}).get("lista", [])] == ["Compra pendente", "Padaria de sábado"]
+   and pend["p1"]["lista"][1]["valor"] == 23.5 and pend["p1"]["lista"][1]["tipo"] == "conta",
+   "pendentes da conta e do cartão vão à parte", pend.get("p1"))
+ok(pend.get("p2", {}).get("lista") == [] and pend["p2"].get("geradoEm"), "quem não tem pendente fica com a lista vazia (e não com a velha)")
+cx = dados.get("conexoes", {})
+ok(cx.get("p1", {}).get("sincronizado") == "2026-10-09T11:00:00.000Z" and cx["p1"].get("proxima"), "guarda quando o Pluggy buscou e a próxima vez", cx.get("p1"))
+ok(cx.get("p2", {}).get("proxima") is None, "sem próxima atualização também fica registrado")
+ok("o Pluggy buscou no banco em" in txt and "Sem atualização automática" in txt, "o log mostra até quando vai o dado", "")
 
 print("\n=== cursor do /v2/transactions ===")
 for entrada, esperado in (

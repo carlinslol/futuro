@@ -96,7 +96,7 @@ export async function subir({ N, servidor, senha, dados, buscar = fetch, avisar 
 
     const antes = estado.transacoes.length;
     const res = N.importarPluggy(estado, dados);
-    if (!res.novas && !res.cartoes && !res.completadas) {
+    if (!res.novas && !res.cartoes && !res.completadas && !res.pendentes && !res.conexoes) {
       avisar("Nada novo para subir: as " + dados.transacoes.length + " transações baixadas já estão no cofre.");
       return { novas: 0, versao: j.versao, total: antes };
     }
@@ -114,6 +114,8 @@ export async function subir({ N, servidor, senha, dados, buscar = fetch, avisar 
     const extras = [];
     if (res.cartoes) extras.push("dados de " + res.cartoes + " cartão(ões) atualizados");
     if (res.completadas) extras.push(res.completadas + " transações ganharam parcela/fatura");
+    if (res.pendentes) extras.push("pendentes atualizadas");
+    if (res.conexoes) extras.push("data da última busca no banco atualizada");
     avisar(res.novas + " transações novas subiram para o cofre (agora são " + estado.transacoes.length + ")" +
       (extras.length ? "; " + extras.join("; ") : "") + ".");
     return { novas: res.novas, cartoes: res.cartoes, completadas: res.completadas, versao: v.versao, total: estado.transacoes.length };

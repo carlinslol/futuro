@@ -133,6 +133,13 @@ ligar). Roda sem abrir janela; o que cada rodada fez fica no
 `sincronizar.log`. Outros horários: `agendar.bat 07:30` ou
 `agendar.bat 07:30 19:00`. Para tirar: `agendar.bat remover`.
 
+**Até quando vai o dado:** o script só lê o que o Pluggy já buscou no banco,
+e no conector MeuPluggy quem decide quando buscar é o Pluggy (ele não aceita
+pedido de atualização pela API). O fim do Resumo mostra, para cada um, "dados
+do banco até ..." e quando o Pluggy busca de novo. Transações que o banco
+ainda não fechou (compra de sábado, por exemplo) aparecem marcadas como
+**pendente**: somam nos gastos, mas só dá para editar depois que fecham.
+
 **Cada um no seu computador:** como vocês não moram juntos, dá para cada um
 rodar o script no próprio computador, preenchendo só a própria pessoa no
 config (a outra fica em branco). Cada um sobe as próprias transações para o

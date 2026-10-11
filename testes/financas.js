@@ -253,6 +253,41 @@ N.mesclar(kc, kb);
 ok(kc.cartoes["acc-2"] && kc.cartoes["acc-2"].limite === 5000, "dados do cartão vão pelo cofre para o outro aparelho");
 ok(N.resumoCartao(N.estadoPadrao(), "p1", "2026-10-09").temDados === false, "sem nada de cartão: a tela sabe que está vazia");
 
+console.log("\n=== pendentes e quando o Pluggy buscou no banco ===");
+const pe = N.estadoPadrao();
+const D1 = { geradoEm: "2026-10-11T08:00:00-03:00", transacoes: [
+  { id: "x1", pessoa: "p1", tipo: "conta", data: "2026-10-09", descricao: "Mercado", valor: 100 }],
+  pendentes: { p1: { geradoEm: "2026-10-11T08:00:00-03:00", lista: [
+    { id: "pp1", pessoa: "p1", tipo: "conta", data: "2026-10-10", descricao: "Padaria de sábado", valor: 23.5, categoriaPluggy: "Bakery" },
+    { id: "pp2", pessoa: "p1", tipo: "cartao", data: "2026-10-10", descricao: "IFOOD", valor: 60 }] } },
+  conexoes: { p1: { banco: "MeuPluggy", status: "UPDATED", sincronizado: "2026-10-10T11:00:00Z", proxima: "2026-10-11T11:00:00Z" } } };
+let rp = N.importarPluggy(pe, D1);
+ok(rp.novas === 1 && rp.pendentes === 1 && rp.conexoes === 1, "pendentes e conexão chegam", JSON.stringify(rp));
+ok(pe.transacoes.length === 1, "pendente não vira transação guardada");
+let tudo = N.comPendentes(pe);
+const pad = tudo.find((t) => t.id === "pend-pp1");
+ok(tudo.length === 3 && pad && pad.pendente && pad.conta === "p1-conta" && pad.categoria === "restaurante", "comPendentes junta, marca e categoriza", pad && pad.categoria);
+const rsp = N.resumoMes(pe, "2026-10");
+ok(perto(rsp.total, 100 + 23.5 + 60), "pendentes entram nos gastos do mês", rsp.total);
+// na sincronização seguinte a padaria fechou (outro id) e o ifood continua pendente
+const D2 = { geradoEm: "2026-10-11T20:00:00-03:00", transacoes: [
+  { id: "x1", pessoa: "p1", tipo: "conta", data: "2026-10-09", descricao: "Mercado", valor: 100 },
+  { id: "x2", pessoa: "p1", tipo: "conta", data: "2026-10-10", descricao: "Padaria de sábado", valor: 23.5 }],
+  pendentes: { p1: { geradoEm: "2026-10-11T20:00:00-03:00", lista: [
+    { id: "pp2", pessoa: "p1", tipo: "cartao", data: "2026-10-10", descricao: "IFOOD", valor: 60 }] } } };
+N.importarPluggy(pe, D2);
+tudo = N.comPendentes(pe);
+ok(tudo.length === 3 && !tudo.some((t) => t.id === "pend-pp1") && tudo.some((t) => t.id === "pg-x2"),
+   "quando fecha, a pendente sai e a transação entra (sem duplicar)", tudo.map((t) => t.id).join(","));
+ok(perto(N.resumoMes(pe, "2026-10").total, 183.5), "total continua certo depois que fecha");
+N.importarPluggy(pe, Object.assign({}, D1, { transacoes: [] }));
+ok(N.comPendentes(pe).length === 3, "lista de pendentes mais velha não volta");
+pe.transacoes.push({ id: "pg-pp2", conta: "p1-cartao", data: "2026-10-10", descricao: "IFOOD", valor: 60, categoria: "restaurante", divisao: "pessoal" });
+ok(!N.comPendentes(pe).some((t) => t.id === "pend-pp2"), "se o banco manteve o id ao fechar, não conta duas vezes");
+const outroAp = N.estadoPadrao();
+N.mesclar(outroAp, pe);
+ok(outroAp.pendentes.p1 && outroAp.conexoes.p1 && outroAp.conexoes.p1.proxima === "2026-10-11T11:00:00Z", "pendentes e conexão vão pelo cofre");
+
 console.log("\n=== cofre cifrado ===");
 (async () => {
   const c1 = await N.derivarCofre("  minha-senha-do-casal ");

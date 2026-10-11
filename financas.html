@@ -244,6 +244,11 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
   .tabela-conf th:nth-child(3) { font-size: 0; }
   .tabela-conf th:nth-child(3)::after { content: "Casal"; font-size: 12px; }
 }
+.etiqueta {
+  display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 999px; border: 1px dashed var(--tinta-3); color: var(--tinta-2); vertical-align: 1px;
+}
+.tx.pendente .valor { color: var(--tinta-2); }
 .tx-total { display: flex; justify-content: space-between; padding: 10px 4px; font-weight: 600; }
 @media (max-width: 760px) {
   .tx-cab { display: none; }
@@ -630,6 +635,8 @@ function estadoPadrao() {
     transacoes: [],
     apagadas: {},                 // id -> quando foi apagada (para não voltar na sincronização)
     cartoes: {},                  // id da conta no Pluggy -> limite, faturas, previstas (do banco)
+    pendentes: {},                // pessoa -> { geradoEm, lista }: o que o banco ainda não fechou
+    conexoes: {},                 // pessoa -> até quando o Pluggy buscou no banco
     configAlterada: 0,            // quando nomes/categorias/regras mudaram pela última vez
     pluggy: { geradoEm: null }
   };
@@ -653,6 +660,8 @@ function completar(e) {
   e.apagadas = e.apagadas && typeof e.apagadas === "object" ? e.apagadas : {};
   e.configAlterada = Number(e.configAlterada) || 0;
   e.cartoes = e.cartoes && typeof e.cartoes === "object" && !Array.isArray(e.cartoes) ? e.cartoes : {};
+  e.pendentes = e.pendentes && typeof e.pendentes === "object" && !Array.isArray(e.pendentes) ? e.pendentes : {};
+  e.conexoes = e.conexoes && typeof e.conexoes === "object" && !Array.isArray(e.conexoes) ? e.conexoes : {};
   return e;
 }
 
@@ -787,6 +796,28 @@ function importarPluggy(e, dados) {
       tot.cartoes++;
     }
   });
+  // pendentes: a lista de cada pessoa é trocada inteira pela mais nova
+  tot.pendentes = 0;
+  Object.keys(dados.pendentes || {}).forEach(function (p) {
+    var n = dados.pendentes[p];
+    if (PESSOAS.indexOf(p) === -1 || !n || !Array.isArray(n.lista)) return;
+    var a = e.pendentes[p];
+    if (!a || String(n.geradoEm || "") > String(a.geradoEm || "")) {
+      if (!a || canonico(a.lista) !== canonico(n.lista)) tot.pendentes++;
+      e.pendentes[p] = JSON.parse(JSON.stringify({ geradoEm: n.geradoEm || null, lista: n.lista }));
+    }
+  });
+  tot.conexoes = 0;
+  Object.keys(dados.conexoes || {}).forEach(function (p) {
+    var c = dados.conexoes[p], a = e.conexoes[p];
+    if (PESSOAS.indexOf(p) === -1 || !c) return;
+    var lido = dados.geradoEm || "";
+    if (!a || String(lido) > String(a.lidoEm || "")) {
+      if (!a || a.sincronizado !== c.sincronizado || a.proxima !== c.proxima) tot.conexoes++;
+      e.conexoes[p] = { banco: c.banco || "", status: c.status || "", sincronizado: c.sincronizado || null,
+                        proxima: c.proxima || null, lidoEm: lido };
+    }
+  });
   e.pluggy.geradoEm = dados.geradoEm || null;
   return tot;
 }
@@ -838,6 +869,12 @@ function mesclar(e, outro) {
     e.categorias = copia.categorias; e.regras = copia.regras;
     e.configAlterada = copia.configAlterada;
   }
+  PESSOAS.forEach(function (p) {
+    var a = e.pendentes[p], b = outro.pendentes[p];
+    if (b && (!a || String(b.geradoEm || "") > String(a.geradoEm || ""))) e.pendentes[p] = JSON.parse(JSON.stringify(b));
+    var c = e.conexoes[p], d = outro.conexoes[p];
+    if (d && (!c || String(d.lidoEm || "") > String(c.lidoEm || ""))) e.conexoes[p] = JSON.parse(JSON.stringify(d));
+  });
   Object.keys(outro.cartoes).forEach(function (k) {
     var a = e.cartoes[k], b = outro.cartoes[k];
     if (!a || String(b.atualizadoEm || "") > String(a.atualizadoEm || "")) e.cartoes[k] = JSON.parse(JSON.stringify(b));
@@ -944,8 +981,34 @@ function gerarSenha() {
 
 /* ---------------------------------------------------------------- contas */
 
+/* As transações mais as pendentes (ainda não fechadas no banco), marcadas
+   com pendente: true. As pendentes não ficam guardadas como transação - a
+   cada sincronização a lista é trocada, e quando uma fecha ela volta como
+   transação normal. Se o banco manteve o id ao fechar, a pendente sai daqui. */
+function comPendentes(e) {
+  var ids = {};
+  e.transacoes.forEach(function (t) { ids[t.id] = true; });
+  var extra = [];
+  PESSOAS.forEach(function (p) {
+    var bloco = e.pendentes[p];
+    ((bloco && bloco.lista) || []).forEach(function (x) {
+      if (ids["pg-" + x.id] || e.apagadas["pg-" + x.id]) return;
+      var valor = Number(x.valor);
+      if (!x.data || !isFinite(valor)) return;
+      var conta = p + "-" + (x.tipo === "cartao" ? "cartao" : "conta");
+      var c = categorizar(e, x.descricao, valor, conta, x.categoriaPluggy);
+      extra.push({
+        id: "pend-" + x.id, conta: conta, data: x.data, descricao: x.descricao, valor: arred(valor),
+        categoria: c.categoria, divisao: c.divisao, origem: "pluggy", pendente: true
+      });
+    });
+  });
+  if (!extra.length) return e.transacoes;
+  return e.transacoes.concat(extra).sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; });
+}
+
 function resumoMes(e, mes) {
-  var doMes = e.transacoes.filter(function (t) { return mesDe(t.data) === mes; });
+  var doMes = comPendentes(e).filter(function (t) { return mesDe(t.data) === mes; });
   var gastos = doMes.filter(ehGasto);
   var r = {
     total: 0,
@@ -1174,7 +1237,7 @@ function serieMeses(e, mesFim, n) {
   for (var i = n - 1; i >= 0; i--) {
     var mes = somarMes(mesFim, -i);
     var x = { mes: mes, p1: 0, p2: 0, total: 0 };
-    e.transacoes.forEach(function (t) {
+    comPendentes(e).forEach(function (t) {
       if (mesDe(t.data) !== mes || !ehGasto(t)) return;
       x[pessoaDaConta(t.conta)] += t.valor; x.total += t.valor;
     });
@@ -1215,7 +1278,7 @@ var Nucleo = {
   apagar: apagar, canonico: canonico, derivarCofre: derivarCofre, cifrar: cifrar, decifrar: decifrar,
   gerarSenha: gerarSenha, limparSenha: limparSenha,
   pessoaDaConta: pessoaDaConta, tipoDaConta: tipoDaConta, outra: outra, mesDe: mesDe, categoria: categoria,
-  ehGasto: ehGasto, pct: pct, resumoMes: resumoMes, somarMes: somarMes,
+  ehGasto: ehGasto, pct: pct, comPendentes: comPendentes, resumoMes: resumoMes, somarMes: somarMes,
   serieMeses: serieMeses, sugerirTermo: sugerirTermo,
   infoParcela: infoParcela, baseParcela: baseParcela, cartaoDe: cartaoDe, mesDaFatura: mesDaFatura,
   resumoCartao: resumoCartao, descricaoCurta: descricaoCurta, arred: arred
@@ -1591,8 +1654,35 @@ function desenharResumo() {
   if (!r.maiores.length) h += '<li class="sub">Nada neste mês.</li>';
   h += "</ul></div>";
   h += "</div></div>";
+  var cx = textoConexoes();
+  var pend = N.comPendentes(estado).filter(function (t) { return t.pendente && N.mesDe(t.data) === mesAtual; }).length;
+  if (cx || pend) {
+    h += '<p class="nota" style="margin-top:4px">' + cx +
+      (pend ? (cx ? "<br>" : "") + "Inclui " + pend + " transaç" + (pend === 1 ? "ão pendente" : "ões pendentes") +
+        " (o banco ainda não fechou; aparecem marcadas em Transações)." : "") + "</p>";
+  }
 
   el.innerHTML = h;
+}
+
+/* "o Pluggy buscou no banco em 10/10 08:15 · próxima: 11/10 08:15" */
+function horaCurta(iso) {
+  if (!iso) return "";
+  var d = new Date(iso);
+  if (isNaN(d)) return "";
+  return ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + " " +
+    ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+}
+function textoConexoes() {
+  var partes = [];
+  ["p1", "p2"].forEach(function (p) {
+    var c = estado.conexoes[p];
+    if (!c) return;
+    var t = esc(nome(p)) + ": dados do banco até " + (horaCurta(c.sincronizado) || "?");
+    t += c.proxima ? " (o Pluggy atualiza de novo em " + horaCurta(c.proxima) + ")" : " (sem atualização automática no Pluggy — confira em meu.pluggy.ai)";
+    partes.push(t);
+  });
+  return partes.join("<br>");
 }
 
 function kpi(rotulo, valor, det) {
@@ -1648,7 +1738,7 @@ function opcoesCategoria(sel) {
 
 function desenharLista() {
   var busca = N.normalizar(filtro.busca);
-  var lista = estado.transacoes.filter(function (t) {
+  var lista = N.comPendentes(estado).filter(function (t) {
     if (!filtro.todos && N.mesDe(t.data) !== mesAtual) return false;
     if (filtro.pessoa && N.pessoaDaConta(t.conta) !== filtro.pessoa) return false;
     if (filtro.categoria && t.categoria !== filtro.categoria) return false;
@@ -1662,6 +1752,20 @@ function desenharLista() {
   lista.slice(0, LIMITE).forEach(function (t) {
     var p = N.pessoaDaConta(t.conta), gasto = N.ehGasto(t);
     var cls = !gasto ? (t.categoria === "entradas" ? "entrada" : "fora") : "";
+    if (t.pendente) {
+      // ainda não fechou no banco: aparece e soma, mas não edita - a edição
+      // se perderia quando ela fechar e voltar como transação definitiva
+      var cat = N.categoria(estado, t.categoria);
+      h += '<div class="tx pendente" data-id="' + esc(t.id) + '">' +
+        "<div>" + dataBR(t.data) + (filtro.todos ? "/" + t.data.slice(2, 4) : "") + "</div>" +
+        '<div class="tx-desc" title="' + esc(t.descricao) + '"><span class="etiqueta" data-dica="O banco ainda não fechou esta transação. Quando fechar, ela aparece aqui como definitiva e dá para editar.">pendente</span> ' +
+        esc(N.descricaoCurta(t.descricao)) + "</div>" +
+        '<div class="quem">' + bolinha(p) + esc(nome(p)) + " · " + esc(N.TIPOS_CONTA[N.tipoDaConta(t.conta)] || "") + "</div>" +
+        '<div class="mudo" style="font-size:13px">' + esc(cat ? cat.nome : t.categoria) + "</div>" +
+        '<div class="mudo" style="font-size:13px">' + (gasto ? (t.divisao === "casal" ? "Do casal" : "Só de " + esc(nome(p))) : "fora da conta") + "</div>" +
+        '<div class="valor ' + cls + '">' + (t.valor < 0 ? "+ " + brl(-t.valor) : brl(t.valor)) + "</div><div></div></div>";
+      return;
+    }
     h += '<div class="tx" data-id="' + esc(t.id) + '">' +
       "<div>" + dataBR(t.data) + (filtro.todos ? "/" + t.data.slice(2, 4) : "") + "</div>" +
       '<div class="tx-desc" title="' + esc(t.descricao) + '">' + esc(N.descricaoCurta(t.descricao)) + "</div>" +
@@ -1894,14 +1998,15 @@ function desenharImportar() {
 
   h += '<div class="cartao"><h2>Conexão automática (opcional)</h2>' +
     '<p class="sub" style="margin-top:0">O Nubank não tem API aberta para pessoa física. O caminho oficial é o <strong>Open Finance</strong>, ' +
-    "e ele é <strong>grátis para uso pessoal pelo Meu Pluggy</strong> (cada um com a própria conta lá). O script <code>financas_pluggy.py</code> " +
-    "baixa as transações num computador e o app, aberto direto desse computador, importa e sobe para o cofre.</p>";
+    "e ele é <strong>grátis para uso pessoal pelo Meu Pluggy</strong> (cada um com a própria conta lá). O <code>sincronizar.bat</code> " +
+    "baixa as transações num computador e sobe direto para o cofre; o <code>agendar.bat</code> faz o Windows rodar isso sozinho.</p>";
+  if (textoConexoes()) h += '<p class="sub">' + textoConexoes() + "</p>";
   if (window.FINANCAS_PLUGGY) {
     var d = window.FINANCAS_PLUGGY;
     h += '<p>✓ Arquivo <code>financas-dados.js</code> encontrado: ' + (d.transacoes || []).length + " transações, geradas em " +
       esc(new Date(d.geradoEm).toLocaleString("pt-BR")) + ".</p>";
   } else {
-    h += '<p class="sub">Nenhum <code>financas-dados.js</code> nesta pasta. Veja o passo a passo no <code>LEIA-ME.md</code> da pasta <code>financas</code>.</p>';
+    h += '<p class="sub">O passo a passo está no <code>README.md</code> do repositório.</p>';
   }
   h += "</div></div>";
   el.innerHTML = h;

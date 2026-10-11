@@ -223,7 +223,7 @@ class Pluggy:
 
     def atualizar_item(self, item_id, espera=180):
         """Pede ao Pluggy para buscar dados novos no banco e espera terminar."""
-        self._pedir("PATCH", "/items/" + item_id, {})
+        self._pedir("PATCH", "/items/" + item_id, {"id": item_id})   # como o SDK oficial
         fim = time.time() + espera
         while time.time() < fim:
             st = self.item(item_id).get("status")
@@ -336,6 +336,21 @@ def converter(t, pessoa, tipo):
     return x
 
 
+def pendente(t, pessoa, tipo):
+    """Transação ainda pendente no banco (conta ou cartão). Vai à parte, sem
+    virar transação: o id muda quando ela fecha, e duplicaria."""
+    valor = valor_de(t)
+    data = data10(t.get("date"))
+    if valor is None or not data:
+        return None
+    x = {"id": str(t.get("id") or ""), "pessoa": pessoa, "tipo": tipo, "data": data,
+         "descricao": t.get("description") or t.get("descriptionRaw") or "(sem descrição)",
+         "valor": valor, "categoriaPluggy": t.get("category") or ""}
+    if tipo == "cartao":
+        x.update(campos_cartao(t))
+    return x
+
+
 def prevista(t):
     """Compra do cartão ainda pendente (ou parcela futura): não vira transação
     - o id muda quando ela fecha -, mas entra na previsão das faturas."""
@@ -369,6 +384,17 @@ def dados_do_cartao(api, c, pessoa, pendentes):
         "previstas": [x for x in (prevista(t) for t in pendentes) if x],
         "atualizadoEm": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
     }
+
+
+def quando(v):
+    """ISO do Pluggy -> "10/10 08:15" no fuso do computador."""
+    if not v:
+        return None
+    try:
+        d = dt.datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+        return d.astimezone().strftime("%d/%m %H:%M")
+    except ValueError:
+        return str(v)[:16]
 
 
 def reais(v):
@@ -597,6 +623,12 @@ def principal(argv=None):
 
     novas = 0
     cartoes = {c["conta"]: c for c in anterior.get("cartoes", []) if c.get("conta")}
+    conexoes = dict(anterior.get("conexoes") or {})
+    # pendentes: a cada rodada a lista de quem foi buscado agora é trocada
+    # inteira (quando a compra fecha, ela vira transação com outro id e some
+    # daqui); de quem não foi buscado nesta máquina, fica a de antes
+    pendentes_ant = dict(anterior.get("pendentes") or {})
+    pend_agora = {}
     for item_id, (pessoa, cred) in cfg["itens"].items():
         nome = "Pessoa 1" if pessoa == "p1" else "Pessoa 2"
         if cred not in apis:
@@ -616,8 +648,17 @@ def principal(argv=None):
         banco = (it.get("connector") or {}).get("name", "?")
         status = it.get("status", "?")
         print("%s - %s (status %s)" % (nome, banco, status))
+        # O script só lê o que o Pluggy já buscou no banco. No conector
+        # MeuPluggy a atualização é do próprio Pluggy (não aceita pedido pela
+        # API): estas datas dizem até quando o dado vai.
+        sync, prox = it.get("lastUpdatedAt"), it.get("nextAutoSyncAt")
+        print("    o Pluggy buscou no banco em %s; próxima vez: %s"
+              % (quando(sync) or "?", quando(prox) or "sem atualização automática marcada"))
+        conexoes[pessoa] = {"banco": banco, "status": status, "sincronizado": sync, "proxima": prox}
         if status in ("LOGIN_ERROR", "OUTDATED", "WAITING_USER_INPUT"):
             print("    ! A conexão pede atenção no Pluggy (reautorizar o Open Finance).")
+        elif not prox:
+            print("    ! Sem atualização automática: confira a conexão em meu.pluggy.ai.")
         for c in api.contas(item_id):
             tipo = "cartao" if (c.get("type") or "").upper() == "CREDIT" else "conta"
             print("    %-6s %s" % ("cartão" if tipo == "cartao" else "conta", c.get("name") or c.get("number") or c.get("id")))
@@ -628,13 +669,19 @@ def principal(argv=None):
                          data10(cd.get("balanceDueDate")) or "?"))
             if a.testar:
                 continue
-            # no cartão, até um ano para a frente: parcelas futuras que o banco já informa
-            ate = hoje + dt.timedelta(days=400) if tipo == "cartao" else hoje
+            # no cartão, até um ano para a frente: parcelas futuras que o banco
+            # já informa. Na conta, até amanhã: "hoje" sozinho pode ser lido
+            # como hoje à meia-noite (UTC) e cortar o que entrou hoje.
+            ate = hoje + dt.timedelta(days=400) if tipo == "cartao" else hoje + dt.timedelta(days=1)
             lista = api.transacoes(c["id"], desde.isoformat(), ate.isoformat())
             n, pendentes = 0, []
             for t in lista:
-                if tipo == "cartao" and (t.get("status") or "").upper() == "PENDING":
+                if (t.get("status") or "").upper() == "PENDING":
                     pendentes.append(t)
+                    p = pendente(t, pessoa, tipo)
+                    if p:
+                        pend_agora.setdefault(pessoa, []).append(p)
+                    continue
                 x = converter(t, pessoa, tipo)
                 if not x:
                     continue
@@ -642,7 +689,9 @@ def principal(argv=None):
                     n += 1
                 por_id[x["id"]] = x
             novas += n
-            print("           %d transações no período, %d novas" % (len(lista), n))
+            print("           %d transações no período, %d novas%s"
+                  % (len(lista) - len(pendentes), n,
+                     ", e %d pendentes (o banco ainda não fechou)" % len(pendentes) if pendentes else ""))
             if tipo == "cartao":
                 cartoes[c["id"]] = dados_do_cartao(api, c, pessoa, pendentes)
                 print("           %d faturas fechadas, %d lançamentos previstos"
@@ -652,10 +701,15 @@ def principal(argv=None):
         print("\nCredenciais e conexões OK.")
         return 0
     todas = sorted(por_id.values(), key=lambda t: t["data"], reverse=True)
+    agora = dt.datetime.now().astimezone().isoformat(timespec="seconds")
+    for item_id, (pessoa, cred) in cfg["itens"].items():
+        pendentes_ant[pessoa] = {"geradoEm": agora, "lista": pend_agora.get(pessoa, [])}
     gravar_saida({
-        "geradoEm": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+        "geradoEm": agora,
         "transacoes": todas,
         "cartoes": list(cartoes.values()),
+        "conexoes": conexoes,
+        "pendentes": pendentes_ant,
     })
     print("\n%d novas. %s tem %d transações%s."
           % (novas, os.path.basename(SAIDA), len(todas),

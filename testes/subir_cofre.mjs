@@ -74,6 +74,16 @@ r = await subir({ N, servidor: SERVIDOR, senha: SENHA, dados: comCartao, avisar:
 ({ versao, estado } = await lerCofre());
 ok(r.novas === 0 && r.cartoes === 1 && estado.cartoes["acc-1"].limite === 5000, "sobe mesmo sem transação nova", JSON.stringify(r));
 
+console.log("\n=== só as pendentes mudaram ===");
+const comPend = Object.assign({}, comCartao, { pendentes: { p1: { geradoEm: "2026-10-11T08:00:00-03:00",
+  lista: [{ id: "pp1", pessoa: "p1", tipo: "conta", data: "2026-10-10", descricao: "Padaria de sábado", valor: 23.5 }] } },
+  conexoes: { p1: { banco: "MeuPluggy", sincronizado: "2026-10-10T11:00:00Z", proxima: "2026-10-11T11:00:00Z" } } });
+r = await subir({ N, servidor: SERVIDOR, senha: SENHA, dados: comPend, avisar: calado });
+({ versao, estado } = await lerCofre());
+ok(r.novas === 0 && estado.pendentes.p1.lista.length === 1 && estado.conexoes.p1.proxima, "pendentes e data da busca sobem sozinhas");
+r = await subir({ N, servidor: SERVIDOR, senha: SENHA, dados: comPend, avisar: calado });
+ok(r.novas === 0 && (await lerCofre()).versao === versao, "e não regravam se nada mudou");
+
 console.log("\n=== o celular apagou uma; o script não ressuscita ===");
 N.apagar(estado, "pg-t1");
 await fetch(URL_COFRE, { method: "PUT", headers: { "Content-Type": "application/json" },
