@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#131312" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Finanças">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='25' fill='%23fff' stroke='%23151514' stroke-width='2'/%3E%3Crect x='2' y='4' width='28' height='8' fill='%23c4122f'/%3E%3Crect x='8' y='1' width='3' height='7' fill='%23151514'/%3E%3Crect x='21' y='1' width='3' height='7' fill='%23151514'/%3E%3Ctext x='16' y='27' font-size='14' font-weight='800' text-anchor='middle' font-family='Arial Narrow,Arial,sans-serif' fill='%23151514'%3ER%24%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='25' fill='%23fff' stroke='%23151514' stroke-width='2'/%3E%3Crect x='2' y='4' width='28' height='8' fill='%23151514'/%3E%3Crect x='8' y='1' width='3' height='7' fill='%23151514'/%3E%3Crect x='21' y='1' width='3' height='7' fill='%23151514'/%3E%3Ctext x='16' y='27' font-size='14' font-weight='800' text-anchor='middle' font-family='Arial Narrow,Arial,sans-serif' fill='%23151514'%3ER%24%3C/text%3E%3C/svg%3E">
 <style>
 /* Folhinha: papel branco, tinta preta e o vermelho da folhinha de parede.
    O vermelho só marca o que passou do limite (dia acima do ritmo, categoria
@@ -89,7 +89,7 @@ body {
   color: var(--tinta);
   font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
-  caret-color: var(--vermelho);
+  caret-color: var(--tinta);
   -webkit-tap-highlight-color: transparent;
 }
 ::selection { background: var(--tinta); color: var(--fundo); }
@@ -177,20 +177,27 @@ p { max-width: 72ch; }
 /* ------------------------------------------------------------- resumo */
 .res-grade { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 56px; align-items: start; }
 
-.orc-valor { font-family: var(--fonte-folha); font-weight: 800; font-size: 68px; line-height: .86; letter-spacing: -0.005em; font-variant-numeric: lining-nums; }
-.orc-frase { margin: 8px 0 0; font-size: 16px; color: var(--tinta-2); display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
-.orc-frase .delta { display: inline-flex; align-items: center; gap: 4px; color: var(--tinta); }
+.orc-valor { font-family: var(--fonte-folha); font-weight: 800; font-size: 68px; line-height: .9; letter-spacing: -0.005em; font-variant-numeric: lining-nums; }
+.orc-de { color: var(--tinta-3); font-size: .62em; white-space: nowrap; }
+.orc-total { margin: 14px 0 0; padding-top: 10px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--tinta-2); }
+.orc-total strong { color: var(--tinta); }
+.orc-frase { margin: 10px 0 0; font-size: 16px; color: var(--tinta-2); }
+.orc-frase strong { color: var(--tinta); }
+.orc-frase .delta { display: inline-flex; align-items: center; gap: 4px; color: var(--tinta); margin-left: 14px; white-space: nowrap; }
+.dia-detalhe + .bloco { margin-top: 44px; }
 .medidor { position: relative; height: 12px; background: var(--jornal-2); margin: 22px 0 10px; }
 .medidor-cheio { position: absolute; left: 0; top: 0; bottom: 0; background: var(--tinta); }
 .medidor-cheio.passou { background: var(--vermelho); }
+.medidor-fim { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; background: var(--tinta-3); }
 .medidor-ritmo { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; background: var(--tinta); box-shadow: 0 0 0 2px var(--fundo); }
 .medidor-linhas { display: flex; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; font-size: 14px; color: var(--tinta-2); }
 .medidor-linhas strong { color: var(--tinta); }
 .ritmo-frase { margin: 6px 0 0; font-size: 14px; color: var(--tinta-2); }
 
-.folha { margin-top: 30px; border-top: 1px solid var(--tinta); }
+.folha { margin-top: 30px; }
 .folha-sem, .folha-dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.folha-sem div { padding: 7px 0 6px; text-align: center; font-size: 12px; font-weight: 700; color: var(--tinta-2); border-bottom: 1px solid var(--linha); }
+.folha-sem { background: var(--tinta); }
+.folha-sem div { padding: 6px 0 5px; text-align: center; font-family: var(--fonte-folha); font-weight: 800; font-size: 15px; letter-spacing: .04em; color: var(--fundo); }
 .folha-dias { border-left: 1px solid var(--linha); }
 .dia, .dia-fora {
   min-height: 74px; border: 0; border-right: 1px solid var(--linha); border-bottom: 1px solid var(--linha);
@@ -208,7 +215,11 @@ p { max-width: 72ch; }
 .dia.futuro:hover { background: none; }
 .dia.acima .dia-n, .dia.acima .dia-v { color: var(--vermelho); }
 .dia.hoje { box-shadow: inset 0 0 0 2px var(--tinta); }
-.dia[aria-pressed="true"] { background: var(--jornal-2); }
+.dia.feriado { background: var(--jornal); }
+.dia.feriado.futuro { cursor: pointer; }
+.dia.feriado.futuro:hover { background: var(--jornal-2); }
+.dia[aria-pressed="true"] { box-shadow: inset 0 4px 0 var(--tinta); background: var(--jornal-2); }
+.dia.hoje[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--tinta), inset 0 6px 0 var(--tinta); }
 .folha-nota { display: flex; justify-content: space-between; gap: 6px 18px; flex-wrap: wrap; margin-top: 10px; font-size: 13px; color: var(--tinta-2); }
 
 .dia-detalhe { margin-top: 24px; }
@@ -293,7 +304,7 @@ input:focus-visible, select:focus-visible { outline-offset: 0; border-color: var
 .botao-x:hover { background: var(--jornal); color: var(--vermelho); }
 
 .tx-cab, .tx {
-  display: grid; grid-template-columns: minmax(0, 1fr) 150px 170px 140px 112px 32px;
+  display: grid; grid-template-columns: minmax(0, 1fr) 128px 204px 130px 108px 32px;
   gap: 10px; align-items: center; padding: 8px 4px;
 }
 .tx-cab { font-size: 12px; font-weight: 600; color: var(--tinta-2); padding-top: 12px; }
@@ -305,9 +316,12 @@ input:focus-visible, select:focus-visible { outline-offset: 0; border-color: var
 .tx .quem { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--tinta-2); white-space: nowrap; overflow: hidden; }
 .tx-desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tx-texto { font-size: 13px; color: var(--tinta-3); }
-.tx-dia { display: flex; align-items: flex-end; gap: 10px; padding: 22px 4px 7px; border-bottom: 2px solid var(--tinta); }
-.tx-dia-n { font-family: var(--fonte-folha); font-weight: 800; font-size: 36px; line-height: .8; }
-.tx-dia-s { font-size: 13px; color: var(--tinta-2); line-height: 1.2; }
+.tx-dia { display: flex; align-items: center; gap: 12px; padding: 22px 4px 8px; border-bottom: 2px solid var(--tinta); }
+.tx-dia-s { font-size: 14px; font-weight: 600; line-height: 1.25; }
+.tx-dia-s small { display: block; font-size: 12px; font-weight: 400; color: var(--tinta-2); }
+.mini-folha.peq { width: 44px; }
+.mini-folha.peq .mf-cab { font-size: 10px; padding: 1px 0; }
+.mini-folha.peq .mf-n { font-size: 23px; padding: 3px 0 4px; }
 .tx-dia-t { margin-left: auto; font-size: 13px; color: var(--tinta-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .etiqueta {
   display: inline-block; font-size: 11px; font-weight: 650; letter-spacing: .01em;
@@ -395,7 +409,7 @@ pre { background: var(--jornal); padding: 10px 12px; overflow-x: auto; font-size
   .res-grade, .cartao-grade, .duas-col { grid-template-columns: minmax(0, 1fr); gap: 44px; }
 }
 @media (max-width: 960px) and (min-width: 761px) {
-  .tx-cab, .tx { grid-template-columns: minmax(0, 1fr) 130px 150px 130px 104px 32px; }
+  .tx-cab, .tx { grid-template-columns: minmax(0, 1fr) 104px 190px 118px 100px 32px; }
 }
 
 /* Celular: abas viram a barra de baixo, a folha encolhe */
@@ -414,7 +428,7 @@ pre { background: var(--jornal); padding: 10px 12px; overflow-x: auto; font-size
   .cab-folha { padding: 20px 0 12px; margin-bottom: 22px; }
   .cab-titulo { font-size: 58px; }
   .mes-nav button { width: 40px; height: 40px; }
-  .orc-valor { font-size: 54px; }
+  .orc-valor { font-size: 52px; }
   .medidor-linhas { flex-direction: column; }
   .dia, .dia-fora { min-height: 58px; padding: 5px 4px 10px; }
   .dia-n { font-size: 22px; }
@@ -475,7 +489,7 @@ pre { background: var(--jornal); padding: 10px 12px; overflow-x: auto; font-size
 
 <header class="topo">
   <div class="topo-dentro">
-    <div class="marca"><svg class="selo" viewBox="0 0 18 20" aria-hidden="true"><rect x=".75" y="3.75" width="16.5" height="15.5" fill="var(--fundo)" stroke="var(--tinta)" stroke-width="1.5"/><rect x="0" y="3" width="18" height="5" fill="var(--vermelho)"/><rect x="4" y="0" width="2" height="5" fill="var(--tinta)"/><rect x="12" y="0" width="2" height="5" fill="var(--tinta)"/><rect x="4" y="11" width="10" height="2" fill="var(--tinta)"/><rect x="4" y="15" width="6" height="2" fill="var(--tinta)"/></svg>Finanças do Casal</div>
+    <div class="marca"><svg class="selo" viewBox="0 0 18 20" aria-hidden="true"><rect x=".75" y="3.75" width="16.5" height="15.5" fill="var(--fundo)" stroke="var(--tinta)" stroke-width="1.5"/><rect x="0" y="3" width="18" height="5" fill="var(--tinta)"/><rect x="4" y="0" width="2" height="5" fill="var(--tinta)"/><rect x="12" y="0" width="2" height="5" fill="var(--tinta)"/><rect x="4" y="11" width="10" height="2" fill="var(--tinta)"/><rect x="4" y="15" width="6" height="2" fill="var(--tinta)"/></svg>Finanças do Casal</div>
     <nav class="abas" role="tablist" aria-label="Seções do app">
       <button class="aba" role="tab" data-aba="resumo" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-folha"/></svg><span>Resumo</span></button>
       <button class="aba" role="tab" data-aba="transacoes"><svg class="ic" aria-hidden="true"><use href="#i-lista"/></svg><span>Transações</span></button>
@@ -1850,6 +1864,30 @@ function diasDoMes(mes) {
   });
   return dias;
 }
+/* Feriados nacionais do ano, como a folhinha imprime: "MM-DD" -> nome.
+   Carnaval e Corpus Christi são ponto facultativo, mas toda folhinha marca. */
+var cacheFeriados = {};
+function feriados(ano) {
+  if (cacheFeriados[ano]) return cacheFeriados[ano];
+  var f = {
+    "01-01": "Confraternização Universal", "04-21": "Tiradentes", "05-01": "Dia do Trabalho",
+    "09-07": "Independência do Brasil", "10-12": "Nossa Senhora Aparecida", "11-02": "Finados",
+    "11-15": "Proclamação da República", "11-20": "Dia da Consciência Negra", "12-25": "Natal"
+  };
+  // Páscoa pelo algoritmo de Meeus/Jones/Butcher (calendário gregoriano)
+  var a = ano % 19, b = Math.floor(ano / 100), c = ano % 100, d = Math.floor(b / 4), e = b % 4;
+  var g = Math.floor((b - Math.floor((b + 8) / 25) + 1) / 3);
+  var hh = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4;
+  var l = (32 + 2 * e + 2 * i - hh - k) % 7, mm = Math.floor((a + 11 * hh + 22 * l) / 451);
+  var pascoa = new Date(ano, Math.floor((hh + l - 7 * mm + 114) / 31) - 1, (hh + l - 7 * mm + 114) % 31 + 1);
+  function mais(dias, nomeF) {
+    var x = new Date(pascoa.getFullYear(), pascoa.getMonth(), pascoa.getDate() + dias);
+    f[("0" + (x.getMonth() + 1)).slice(-2) + "-" + ("0" + x.getDate()).slice(-2)] = nomeF;
+  }
+  mais(-48, "Carnaval (ponto facultativo)"); mais(-47, "Carnaval (ponto facultativo)");
+  mais(-2, "Sexta-feira Santa"); mais(60, "Corpus Christi (ponto facultativo)");
+  return (cacheFeriados[ano] = f);
+}
 function valorCasa(v) {
   if (Math.abs(v) >= 1000) return (v / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mil";
   return Math.round(v).toLocaleString("pt-BR");
@@ -1890,32 +1928,42 @@ function desenharResumo() {
   var h = '<div class="res-grade"><div>';
 
   /* O mês contra o orçamento */
-  h += '<div class="orc"><div class="orc-valor">' + brl(r.total) + "</div>";
-  h += '<p class="orc-frase"><span>gastos em ' + MESES[m - 1] + "</span>";
-  if (ant.total > 0) {
-    var dp = (r.total - ant.total) / ant.total * 100;
-    h += '<span class="delta">' + ic(dp > 0 ? "sobe" : "desce", "ic-p") + Math.abs(dp).toFixed(0) + "% " +
-      (dp > 0 ? "a mais" : "a menos") + " que " + MESES[Number(mesAnt.slice(5, 7)) - 1] + "</span>";
-  }
-  h += "</p>";
+  var feriadosMes = feriados(ano);
+  h += '<div class="orc">';
   if (orcamento > 0) {
     var passou = orcado > orcamento;
+    var correndo = decorridos > 0 && decorridos < nDias;
     var ritmoHoje = ritmoDia * decorridos;
-    h += '<div class="medidor" role="img" aria-label="' + esc(brl(orcado) + " de " + brl(orcamento) + " do orçamento") + '">' +
-      '<div class="medidor-cheio' + (passou ? " passou" : "") + '" style="width:' + Math.min(100, orcado / orcamento * 100) + '%"></div>' +
-      (decorridos > 0 && decorridos < nDias ? '<div class="medidor-ritmo" style="left:' + (decorridos / nDias * 100) + '%" data-dica="Ritmo até hoje: ' + esc(brl(ritmoHoje)) + '"></div>' : "") +
-      "</div>";
-    h += '<div class="medidor-linhas"><span><strong class="num">' + brl(orcado) + "</strong> de " + brl(orcamento) + " nas categorias com orçamento</span>" +
+    var limite = correndo ? ritmoHoje : orcamento;          // até onde o preto vai; dali em diante é vermelho
+    var escala = Math.max(orcamento, orcado);
+    var pct = function (v) { return (escala ? v / escala * 100 : 0) + "%"; };
+    h += '<div class="orc-valor">' + brl(orcado) + ' <span class="orc-de">de ' + brl(orcamento) + "</span></div>";
+    h += '<p class="orc-frase">gastos nas categorias com orçamento · ' +
       (passou ? '<span class="acima">' + ic("alerta", "ic-p") + " passou " + brl(orcado - orcamento) + "</span>"
-              : "<span>sobram <strong class=\"num\">" + brl(orcamento - orcado) + "</strong>" +
-                (decorridos > 0 && decorridos < nDias ? " para " + (nDias - decorridos) + " dia" + (nDias - decorridos === 1 ? "" : "s") : "") + "</span>") +
+              : "sobram <strong class=\"num\">" + brl(orcamento - orcado) + "</strong>" +
+                (correndo ? " para " + (nDias - decorridos) + " dia" + (nDias - decorridos === 1 ? "" : "s") : "")) + "</p>";
+    h += '<div class="medidor" role="img" aria-label="' + esc(brl(orcado) + " de " + brl(orcamento) + " do orçamento" +
+      (correndo ? "; o ritmo até hoje seria " + brl(ritmoHoje) : "")) + '">' +
+      '<div class="medidor-cheio" style="width:' + pct(Math.min(orcado, limite)) + '"></div>' +
+      (orcado > limite ? '<div class="medidor-cheio passou" style="left:' + pct(limite) + ";width:" + pct(orcado - limite) + '"></div>' : "") +
+      (correndo ? '<div class="medidor-ritmo" style="left:' + pct(ritmoHoje) + '" data-dica="Ritmo até hoje: ' + esc(brl(ritmoHoje)) + '"></div>' : "") +
+      (passou ? '<div class="medidor-fim" style="left:' + pct(orcamento) + '" data-dica="Orçamento: ' + esc(brl(orcamento)) + '"></div>' : "") +
       "</div>";
-    if (decorridos > 0 && decorridos < nDias) {
+    if (correndo) {
       var dif = orcado - ritmoHoje;
       h += '<p class="ritmo-frase">No dia ' + decorridos + " de " + nDias + ", o ritmo seria " + brl(ritmoHoje) + ": " +
         (dif > 0 ? '<span class="acima">' + brl(dif) + " acima</span>." : brl(-dif) + " abaixo, dentro do ritmo.") + "</p>";
     }
+    h += '<p class="orc-total">Total do mês, com todas as categorias: <strong class="num">' + brl(r.total) + "</strong></p>";
   } else {
+    h += '<div class="orc-valor">' + brl(r.total) + "</div>";
+    h += '<p class="orc-frase"><span>gastos em ' + MESES[m - 1] + "</span>";
+    if (ant.total > 0) {
+      var dp = (r.total - ant.total) / ant.total * 100;
+      h += '<span class="delta">' + ic(dp > 0 ? "sobe" : "desce", "ic-p") + Math.abs(dp).toFixed(0) + "% " +
+        (dp > 0 ? "a mais" : "a menos") + " que " + MESES[Number(mesAnt.slice(5, 7)) - 1] + "</span>";
+    }
+    h += "</p>";
     h += '<p class="ritmo-frase">Sem orçamento ainda. Ponha um limite nas categorias em <a href="#" data-ir="config">Configurar</a> para ver o ritmo do mês.</p>';
   }
   h += "</div>";
@@ -1927,11 +1975,14 @@ function desenharResumo() {
   for (var v = 0; v < vazias; v++) h += '<div class="dia-fora" aria-hidden="true"></div>';
   for (var d = 1; d <= nDias; d++) {
     var x = dias[d], futuro = d > decorridos && !x;
+    var feriado = feriadosMes[mesAtual.slice(5, 7) + "-" + ("0" + d).slice(-2)];
     var acima = !!(x && orcamento > 0 && x.orcado > ritmoDia);
-    var cls = "dia" + (futuro ? " futuro" : "") + (acima ? " acima" : "") + (mesAtual === mesHoje && d === decorridos ? " hoje" : "");
-    var rotulo = d + " de " + MESES[m - 1] + ": " + (x ? brl(x.total) : "nada") + (acima ? ", acima do ritmo" : "") +
-      (mesAtual === mesHoje && d === decorridos ? " (hoje)" : "");
-    h += '<button class="' + cls + '" data-dia="' + d + '" aria-pressed="' + (diaEscolhido.dia === d) + '" aria-label="' + esc(rotulo) + '"' + (futuro ? " disabled" : "") + ">" +
+    var cls = "dia" + (futuro ? " futuro" : "") + (acima ? " acima" : "") + (feriado ? " feriado" : "") +
+      (mesAtual === mesHoje && d === decorridos ? " hoje" : "");
+    var rotulo = d + " de " + MESES[m - 1] + (feriado ? ", " + feriado : "") + ": " + (x ? brl(x.total) : "nada") +
+      (acima ? ", acima do ritmo" : "") + (mesAtual === mesHoje && d === decorridos ? " (hoje)" : "");
+    h += '<button class="' + cls + '" data-dia="' + d + '" aria-pressed="' + (diaEscolhido.dia === d) + '" aria-label="' + esc(rotulo) + '"' +
+      (feriado ? ' data-dica="' + esc(feriado) + '"' : "") + (futuro && !feriado ? " disabled" : "") + ">" +
       '<span class="dia-n">' + d + "</span>" +
       (x ? '<span class="dia-v">' + valorCasa(x.total) + "</span>" : "");
     if (x && x.total > 0) {
@@ -1944,10 +1995,20 @@ function desenharResumo() {
   var resto = (7 - (vazias + nDias) % 7) % 7;
   for (var f = 0; f < resto; f++) h += '<div class="dia-fora" aria-hidden="true"></div>';
   h += "</div></div>";
-  h += '<div class="folha-nota"><span>Valores em reais.' +
-    (orcamento > 0 ? " Em vermelho, o dia passou de " + brl(ritmoDia) + ", o ritmo diário do orçamento." : "") + "</span>" +
-    legenda("quem pagou") + "</div>";
+  h += '<div class="folha-nota"><span>Gasto do dia, em reais.' +
+    (orcamento > 0 ? " Em vermelho, os dias em que as categorias com orçamento passaram de " + brl(ritmoDia) + ", o ritmo diário." : "") +
+    " Fundo cinza: feriado nacional.</span>" + legenda("quem pagou") + "</div>";
   h += '<div class="dia-detalhe" id="dia-detalhe"></div>';
+
+  /* Maiores gastos */
+  h += '<section class="bloco"><h2 class="bloco-titulo">Maiores gastos do mês</h2><ul class="lista-simples lista-topo">';
+  r.maiores.forEach(function (t) {
+    var pp = N.pessoaDaConta(t.conta);
+    h += '<li><span class="desc-curta" title="' + esc(t.descricao) + '">' + bolinha(pp) + esc(N.descricaoCurta(t.descricao)) +
+      ' <span class="mudo">· ' + esc(nome(pp)) + " · " + dataBR(t.data) + '</span></span><span class="num">' + brl(t.valor) + "</span></li>";
+  });
+  if (!r.maiores.length) h += '<li class="sub">Nada neste mês.</li>';
+  h += "</ul></section>";
   h += "</div>";
 
   /* Coluna da direita */
@@ -2016,15 +2077,6 @@ function desenharResumo() {
   });
   h += "</div></section>";
 
-  /* Maiores gastos */
-  h += '<section class="bloco"><h2 class="bloco-titulo">Maiores gastos do mês</h2><ul class="lista-simples lista-topo">';
-  r.maiores.forEach(function (t) {
-    var pp = N.pessoaDaConta(t.conta);
-    h += '<li><span class="desc-curta" title="' + esc(t.descricao) + '">' + bolinha(pp) + esc(N.descricaoCurta(t.descricao)) +
-      ' <span class="mudo">· ' + esc(nome(pp)) + " · " + dataBR(t.data) + '</span></span><span class="num">' + brl(t.valor) + "</span></li>";
-  });
-  if (!r.maiores.length) h += '<li class="sub">Nada neste mês.</li>';
-  h += "</ul></section>";
 
   var cx = textoConexoes();
   var pend = N.comPendentes(estado).filter(function (t) { return t.pendente && N.mesDe(t.data) === mesAtual; }).length;
@@ -2056,9 +2108,11 @@ function desenharDia(dias) {
   if (!d) { alvo.innerHTML = '<p class="nota">Toque num dia da folha para ver o que saiu nele.</p>'; return; }
   var ano = Number(mesAtual.slice(0, 4)), m = Number(mesAtual.slice(5, 7));
   var x = dias[d];
-  var h = '<div class="cab-dia"><h3>' + DIAS_SEMANA[new Date(ano, m - 1, d).getDay()] + ", " + d + " de " + MESES[m - 1] + "</h3>" +
+  var feriado = feriados(ano)[mesAtual.slice(5, 7) + "-" + ("0" + d).slice(-2)];
+  var h = '<div class="cab-dia"><h3>' + DIAS_SEMANA[new Date(ano, m - 1, d).getDay()] + ", " + d + " de " + MESES[m - 1] +
+    (feriado ? ' <span class="mudo">· ' + esc(feriado) + "</span>" : "") + "</h3>" +
     '<span class="num">' + (x ? brl(x.total) : "") + "</span></div>";
-  if (!x) h += '<p class="vazio-curto">Nada saiu neste dia.</p>';
+  if (!x) h += '<p class="vazio-curto">' + (mesAtual + "-" + ("0" + d).slice(-2) > hojeISO() ? "Ainda não chegou." : "Nada saiu neste dia.") + "</p>";
   else {
     h += '<ul class="lista-simples">';
     x.itens.slice().sort(function (a, b) { return b.valor - a.valor; }).forEach(function (t) {
@@ -2119,7 +2173,7 @@ function desenharTransacoes() {
     '<select id="f-cat"><option value="">Todas as categorias</option>' + opcoesCategoria("") + "</select>" +
     '<select id="f-div"><option value="">Pessoal e casal</option><option value="casal">Só do casal</option><option value="pessoal">Só pessoais</option></select>' +
     '<label class="sub"><input type="checkbox" id="f-todos"' + (filtro.todos ? " checked" : "") + "> todos os meses</label>" +
-    '<button class="botao" id="nova-tx">' + ic("mais") + "Lançar à mão</button>" +
+    '<button class="botao primario" id="nova-tx">' + ic("mais") + "Lançar à mão</button>" +
     "</div>";
   h += '<div id="form-nova"></div>';
   h += '<div class="tx-cab" aria-hidden="true"><div>Descrição</div><div>Quem</div><div>Categoria</div><div>Divisão</div><div style="text-align:right">Valor</div><div></div></div>';
@@ -2168,9 +2222,12 @@ function desenharLista() {
       // cabeçalho de folhinha a cada dia: número grande e o dia da semana
       diaAtual = t.data;
       var dt = new Date(Number(t.data.slice(0, 4)), Number(t.data.slice(5, 7)) - 1, Number(t.data.slice(8, 10)));
-      h += '<div class="tx-dia"><span class="tx-dia-n">' + Number(t.data.slice(8, 10)) + "</span>" +
-        '<span class="tx-dia-s">' + DIAS_SEMANA[dt.getDay()] + "<br>" + MESES[dt.getMonth()] +
-        (filtro.todos || t.data.slice(0, 7) !== mesAtual ? " de " + t.data.slice(0, 4) : "") + "</span>" +
+      var fer = feriados(dt.getFullYear())[t.data.slice(5, 10)];
+      h += '<div class="tx-dia"><div class="mini-folha peq" aria-hidden="true"><div class="mf-cab">' + MESES_CURTOS[dt.getMonth()] + "</div>" +
+        '<div class="mf-n">' + dt.getDate() + "</div></div>" +
+        '<span class="tx-dia-s">' + DIAS_SEMANA[dt.getDay()] + ", " + dt.getDate() + " de " + MESES[dt.getMonth()] +
+        (filtro.todos || t.data.slice(0, 7) !== mesAtual ? " de " + t.data.slice(0, 4) : "") +
+        (fer ? "<small>" + esc(fer) + "</small>" : "") + "</span>" +
         (porDia[t.data] ? '<span class="tx-dia-t">' + brl(porDia[t.data]) + "</span>" : "") + "</div>";
     }
     var cls = !gasto ? (t.categoria === "entradas" ? "entrada" : "fora") : "";
