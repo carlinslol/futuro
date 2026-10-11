@@ -62,6 +62,8 @@ async function principal() {
   const html = await r.text();
   ok(r.status === 200 && html.includes('<script id="nucleo">'), "entrega o financas.html em /");
   ok(/connect-src 'self'/.test(r.headers.get("Content-Security-Policy") || ""), "com CSP");
+  // a fonte dos algarismos vai embutida no html como data: — sem isso o celular cai na fonte genérica
+  ok(/font-src 'self' data:/.test(r.headers.get("Content-Security-Policy") || ""), "CSP deixa a fonte embutida carregar");
   r = await pedir("/financas-dados.js");
   ok(r.status === 200 && (await r.text()) === "", "financas-dados.js vazio online");
   ok((await pedir("/qualquer")).status === 404, "o resto é 404");
