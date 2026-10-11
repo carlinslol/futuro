@@ -215,9 +215,10 @@ p { max-width: 72ch; }
 .dia.futuro:hover { background: none; }
 .dia.acima .dia-n, .dia.acima .dia-v { color: var(--vermelho); }
 .dia.hoje { box-shadow: inset 0 0 0 2px var(--tinta); }
-.dia.feriado { background: var(--jornal); }
+.dia-f { margin-top: 3px; max-width: 100%; font-family: var(--fonte-folha); font-size: 13px; font-weight: 600; line-height: 1; color: var(--tinta);
+  overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .dia.feriado.futuro { cursor: pointer; }
-.dia.feriado.futuro:hover { background: var(--jornal-2); }
+.dia.feriado.futuro:hover { background: var(--jornal); }
 .dia[aria-pressed="true"] { box-shadow: inset 0 4px 0 var(--tinta); background: var(--jornal-2); }
 .dia.hoje[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--tinta), inset 0 6px 0 var(--tinta); }
 .folha-nota { display: flex; justify-content: space-between; gap: 6px 18px; flex-wrap: wrap; margin-top: 10px; font-size: 13px; color: var(--tinta-2); }
@@ -433,6 +434,7 @@ pre { background: var(--jornal); padding: 10px 12px; overflow-x: auto; font-size
   .dia, .dia-fora { min-height: 58px; padding: 5px 4px 10px; }
   .dia-n { font-size: 22px; }
   .dia-v { font-size: 11px; letter-spacing: -0.01em; }
+  .dia-f { font-size: 11.5px; }
   .dia-barra { left: 4px; right: 4px; bottom: 4px; }
   .pessoa-valor { font-size: 34px; }
   .fatura-atual .valor { font-size: 52px; }
@@ -1822,8 +1824,9 @@ function desenhar() {
 
 /* ------------------------------------------------------------------ dica */
 var dica = $("#dica");
-document.addEventListener("mousemove", function (ev) {
-  var alvo = ev.target.closest && ev.target.closest("[data-dica]");
+/* Só com mouse: no toque, o "mousemove" de emulação deixava a dica presa na tela. */
+document.addEventListener("pointermove", function (ev) {
+  var alvo = ev.pointerType === "mouse" && ev.target.closest && ev.target.closest("[data-dica]");
   if (!alvo) { dica.style.display = "none"; return; }
   dica.textContent = alvo.dataset.dica;
   dica.style.display = "block";
@@ -1888,6 +1891,12 @@ function feriados(ano) {
   mais(-2, "Sexta-feira Santa"); mais(60, "Corpus Christi (ponto facultativo)");
   return (cacheFeriados[ano] = f);
 }
+/* O nome curto que cabe na casa do dia, como a folhinha imprime */
+var FERIADO_CURTO = {
+  "Confraternização Universal": "Ano Novo", "Dia do Trabalho": "Trabalho", "Independência do Brasil": "Independência",
+  "Nossa Senhora Aparecida": "Aparecida", "Proclamação da República": "República", "Dia da Consciência Negra": "Consc. Negra",
+  "Carnaval (ponto facultativo)": "Carnaval", "Corpus Christi (ponto facultativo)": "Corpus Christi", "Sexta-feira Santa": "Sexta Santa"
+};
 function valorCasa(v) {
   if (Math.abs(v) >= 1000) return (v / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mil";
   return Math.round(v).toLocaleString("pt-BR");
@@ -1984,6 +1993,7 @@ function desenharResumo() {
     h += '<button class="' + cls + '" data-dia="' + d + '" aria-pressed="' + (diaEscolhido.dia === d) + '" aria-label="' + esc(rotulo) + '"' +
       (feriado ? ' data-dica="' + esc(feriado) + '"' : "") + (futuro && !feriado ? " disabled" : "") + ">" +
       '<span class="dia-n">' + d + "</span>" +
+      (feriado ? '<span class="dia-f">' + esc(FERIADO_CURTO[feriado] || feriado) + "</span>" : "") +
       (x ? '<span class="dia-v">' + valorCasa(x.total) + "</span>" : "");
     if (x && x.total > 0) {
       h += '<span class="dia-barra">' +
@@ -1997,7 +2007,7 @@ function desenharResumo() {
   h += "</div></div>";
   h += '<div class="folha-nota"><span>Gasto do dia, em reais.' +
     (orcamento > 0 ? " Em vermelho, os dias em que as categorias com orçamento passaram de " + brl(ritmoDia) + ", o ritmo diário." : "") +
-    " Fundo cinza: feriado nacional.</span>" + legenda("quem pagou") + "</div>";
+    " Nome pequeno na casa: feriado nacional.</span>" + legenda("quem pagou") + "</div>";
   h += '<div class="dia-detalhe" id="dia-detalhe"></div>';
 
   /* Maiores gastos */
