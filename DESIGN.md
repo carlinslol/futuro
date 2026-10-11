@@ -344,7 +344,7 @@ A single centered column (max 1180px, 32px side padding; 16px on phone) under a 
 
 Resumo is a two-column grid (about 1.12fr / 1fr, 56px gutter): budget figure, meter and the month sheet on the left, categories, per-person and last-six-months on the right. Cartão and Importar use equal two columns at the same 56px gutter. Blocks are separated by 44px. Below 960px everything stacks to one column; on phone, Resumo's "maiores gastos" list moves to the end. When Clo stands on the budget meter, the meter takes 72px of top margin to hold her.
 
-At 760px and below, the tabs become a fixed bottom bar of five equal cells (62px, icon over 11.5px label, safe-area aware), the selected tab marked by a 3px ink bar at its top edge. The calendar cells shrink to 58px and transaction rows reflow into a three-line grid (description and value, who, category and split). Configurar's appearance options become three equal columns.
+At 760px and below, the tabs become a fixed bottom bar of five equal cells (62px, icon over 11.5px label, safe-area aware), the selected tab marked by a 3px ink bar at its top edge. The calendar cells shrink to 58px and transaction rows reflow into a three-line grid (description and value, who, category and split). Configurar's appearance options become a three-column segmented row that fits at 360px.
 
 Rhythm steps actually used: 4, 8, 12, 16, 24, 32, 44, 56px.
 
@@ -379,7 +379,7 @@ Plain printed controls, firm and quiet.
 ### Chips (person choice, appearance)
 - **Style:** 44px tall labels with a strong-hairline border, 2px corners, the person marker and name inside.
 - **State:** checked gets an ink border plus 1px inset ink, jornal fill, weight 650.
-- **Appearance row:** Configurar → Aparência reuses the same chip as a radio group: Automático, Claro, Escuro, 9px 16px padding (three equal columns on phone), with a note that the choice applies to this device only.
+- **Appearance row:** Configurar → Aparência reuses the same chip as a radio group: Automático, Claro, Escuro, 9px 16px padding, with a note that the choice applies to this device only. On phone it becomes a segmented row of three equal, centered buttons (9px 8px padding) with the radio dots visually hidden; selection still reads as ink border, inset ink and jornal fill, and keyboard focus outlines the label.
 
 ### Cards / Containers
 - **Corner Style:** square.
