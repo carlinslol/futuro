@@ -1,6 +1,6 @@
-# Finanças do Casal
+# Clo
 
-Controle de gastos para duas pessoas com Nubank que **não moram juntas**: cada
+Finanças do casal. Controle de gastos para duas pessoas com Nubank que **não moram juntas**: cada
 um usa no próprio celular, os dois veem e editam os mesmos dados. O app junta
 o **cartão** e a **conta** de cada um e separa o que é pessoal do que é do
 casal.

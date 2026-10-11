@@ -82,7 +82,14 @@ terceiros lendo o extrato.
 
 ## Brand Commitments
 
-- Nome: **Finanças do Casal** (na tela de início: "Finanças").
+- Nome: **Clo** (também na tela de início). Antes se chamava "Finanças do Casal";
+  o Worker continua com o nome técnico `financas-casal`, para o endereço não mudar.
+- Mascote: **Clo**, uma calopsita desenhada a partir da calopsita de verdade do
+  casal (corpo cinza, rosto e topete amarelos, bochecha laranja, faixa branca na
+  asa). Ela é a marca (logo e ícone) e aparece só em momentos certos: telas
+  vazias, avisos e no orçamento do mês, com o topete deitado dentro do ritmo e
+  em pé quando passa. As cores dela ficam só no desenho, nunca nas cores do app.
+  Nada de infantil ou gamificado: ela acompanha, os números mandam.
 - Idioma: português do Brasil, em texto direto e coloquial, falando com as
   duas pessoas ("vocês").
 - Cada pessoa tem uma cor fixa (Pessoa 1 azul, Pessoa 2 laranja) e a cor nunca

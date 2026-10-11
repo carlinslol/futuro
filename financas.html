@@ -3,12 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Finanças do Casal</title>
+<title>Clo</title>
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#131312" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Finanças">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='25' fill='%23fff' stroke='%23151514' stroke-width='2'/%3E%3Crect x='2' y='4' width='28' height='8' fill='%23151514'/%3E%3Crect x='8' y='1' width='3' height='7' fill='%23151514'/%3E%3Crect x='21' y='1' width='3' height='7' fill='%23151514'/%3E%3Ctext x='16' y='27' font-size='14' font-weight='800' text-anchor='middle' font-family='Arial Narrow,Arial,sans-serif' fill='%23151514'%3ER%24%3C/text%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-title" content="Clo">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cpath d=%22M30 11.5c1.2-3.6 3.2-6.6 6.2-8.6.9-.6 2.1-.1 2.2 1 .1 1.6-.4 3.2-1.2 4.6 1.6-1.6 3.6-2.6 5.8-3 1.1-.2 1.9.9 1.4 1.9-.9 1.7-2.2 3.1-3.8 4.1 1.5-.5 3.1-.5 4.6 0 1 .3 1.2 1.6.4 2.3-2.4 2.1-5.6 3.2-8.8 3z%22 fill=%22%23f4d84f%22/%3E %3Ccircle cx=%2232%22 cy=%2237%22 r=%2226%22 fill=%22%23f4d84f%22/%3E %3Ccircle cx=%2221%22 cy=%2233%22 r=%223.7%22 fill=%22%231b1b1d%22/%3E %3Ccircle cx=%2243%22 cy=%2233%22 r=%223.7%22 fill=%22%231b1b1d%22/%3E %3Ccircle cx=%2214.6%22 cy=%2241.5%22 r=%225.4%22 fill=%22%23e8873a%22/%3E %3Ccircle cx=%2249.4%22 cy=%2241.5%22 r=%225.4%22 fill=%22%23e8873a%22/%3E %3Cpath d=%22M27.8 36.2h8.4c1.2 0 1.9 1.3 1.3 2.3l-4.2 7c-.6 1-2 1-2.6 0l-4.2-7c-.6-1 .1-2.3 1.3-2.3z%22 fill=%22%23f2bf72%22/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icone-180.png">
+<script>
+try {
+  var temaSalvo = (JSON.parse(localStorage.getItem("financas-casal-v1-aparelho")) || {}).tema;
+  if (temaSalvo === "claro" || temaSalvo === "escuro") document.documentElement.dataset.theme = temaSalvo === "claro" ? "light" : "dark";
+} catch (err) { /* sem preferência: segue o celular */ }
+</script>
 <style>
 /* Folhinha: papel branco, tinta preta e o vermelho da folhinha de parede.
    O vermelho só marca o que passou do limite (dia acima do ritmo, categoria
@@ -109,7 +116,14 @@ strong { font-weight: 650; }
   display: flex; align-items: center; gap: 24px; min-height: 56px;
 }
 .marca { display: flex; align-items: center; gap: 10px; margin-right: auto; font-weight: 700; font-size: 15px; letter-spacing: -0.01em; white-space: nowrap; }
-.selo { width: 18px; height: 20px; flex: none; }
+.marca-clo { width: 32px; height: 32px; flex: none; }
+.marca-nome { font-family: var(--fonte-folha); font-weight: 800; font-size: 26px; line-height: 1; letter-spacing: .01em; }
+.tema-btn {
+  display: grid; place-items: center; width: 36px; height: 36px; flex: none; cursor: pointer;
+  border: 1px solid var(--linha); background: var(--fundo); color: var(--tinta-2); border-radius: 2px;
+}
+.tema-btn:hover { border-color: var(--base); color: var(--tinta); }
+.tema-btn .ic { width: 18px; height: 18px; vertical-align: 0; }
 .nuvem-ind {
   display: inline-flex; align-items: center; gap: 6px;
   border: 1px solid var(--linha); background: var(--fundo); color: var(--tinta-2);
@@ -188,6 +202,9 @@ p { max-width: 72ch; }
 .orc-frase .delta { display: inline-flex; align-items: center; gap: 4px; color: var(--tinta); margin-left: 14px; white-space: nowrap; }
 .dia-detalhe + .bloco { margin-top: 44px; }
 .medidor { position: relative; height: 12px; background: var(--jornal-2); margin: 22px 0 10px; }
+.medidor.com-clo { margin-top: 72px; }
+.clo-poleiro { position: absolute; bottom: calc(100% - 1px); width: 52px; height: 58px; margin-left: -26px; pointer-events: auto; }
+.clo-poleiro svg { width: 100%; height: 100%; display: block; }
 .medidor-cheio { position: absolute; left: 0; top: 0; bottom: 0; background: var(--tinta); }
 .medidor-cheio.passou { background: var(--vermelho); }
 .medidor-fim { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; background: var(--tinta-3); }
@@ -396,6 +413,18 @@ pre { background: var(--jornal); padding: 10px 12px; overflow-x: auto; font-size
 
 .aviso { background: var(--aviso-fundo); padding: 10px 12px; font-size: 14px; margin-bottom: 16px; }
 .vazio { padding: 8px 0 40px; color: var(--tinta-2); max-width: 60ch; }
+.vazio-com-clo { display: flex; gap: 28px; align-items: flex-start; max-width: 760px; }
+.vazio-com-clo > svg { width: 120px; height: 135px; flex: none; }
+.vazio-lista.vazio-com-clo { align-items: center; gap: 16px; }
+.vazio-lista.vazio-com-clo > svg { width: 52px; height: 58px; }
+.brinde .clo-brinde { width: 22px; height: 22px; flex: none; }
+.aparencia { display: flex; flex-wrap: wrap; gap: 8px; }
+.aparencia label {
+  display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--base); border-radius: 2px;
+  padding: 9px 16px; cursor: pointer; min-height: 44px;
+}
+.aparencia label:hover { border-color: var(--tinta-3); }
+.aparencia label:has(input:checked) { border-color: var(--tinta); box-shadow: inset 0 0 0 1px var(--tinta); background: var(--jornal); font-weight: 650; }
 .vazio strong { display: block; font-family: var(--fonte-folha); font-weight: 800; font-size: 40px; line-height: .95; text-transform: uppercase; color: var(--tinta); margin-bottom: 14px; }
 
 .brinde {
@@ -421,7 +450,10 @@ pre { background: var(--jornal); padding: 10px 12px; overflow-x: auto; font-size
 /* Celular: abas viram a barra de baixo, a folha encolhe */
 @media (max-width: 760px) {
   body { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
-  .topo-dentro { padding: 0 16px; min-height: 48px; }
+  .topo-dentro { padding: 0 16px; min-height: 52px; gap: 10px; }
+  .vazio-com-clo { flex-direction: column; gap: 12px; }
+  .vazio-com-clo > svg { width: 88px; height: 99px; }
+  .vazio-lista.vazio-com-clo { flex-direction: row; }
   .abas {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
     display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0;
@@ -492,11 +524,59 @@ pre { background: var(--jornal); padding: 10px 12px; overflow-x: auto; font-size
   <symbol id="i-desce" viewBox="0 0 24 24"><path d="M12 4.5v15M6 13.5l6 6 6-6"/></symbol>
   <symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-nuvem" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 0 1-13.4 4.6M4.5 12a7.5 7.5 0 0 1 13.4-4.6M18.5 3.5v4h-4M5.5 20.5v-4h4"/></symbol>
+  <!-- Clo, a calopsita do app, de frente e chapada: rosto amarelo, bochechas laranja (as da
+       calopsita do casal), topete. A cabeça é a marca; inteira, ela fica no poleiro do
+       orçamento, com o topete pequeno (dentro do ritmo) ou alto (passou do ritmo). -->
+  <symbol id="clo-cabeca" viewBox="0 0 64 64">
+    <path d="M30 11.5c1.2-3.6 3.2-6.6 6.2-8.6.9-.6 2.1-.1 2.2 1 .1 1.6-.4 3.2-1.2 4.6 1.6-1.6 3.6-2.6 5.8-3 1.1-.2 1.9.9 1.4 1.9-.9 1.7-2.2 3.1-3.8 4.1 1.5-.5 3.1-.5 4.6 0 1 .3 1.2 1.6.4 2.3-2.4 2.1-5.6 3.2-8.8 3z" fill="#f4d84f"/>
+    <circle cx="32" cy="37" r="26" fill="#f4d84f"/>
+    <circle cx="21" cy="33" r="3.7" fill="#1b1b1d"/>
+    <circle cx="43" cy="33" r="3.7" fill="#1b1b1d"/>
+    <circle cx="14.6" cy="41.5" r="5.4" fill="#e8873a"/>
+    <circle cx="49.4" cy="41.5" r="5.4" fill="#e8873a"/>
+    <path d="M27.8 36.2h8.4c1.2 0 1.9 1.3 1.3 2.3l-4.2 7c-.6 1-2 1-2.6 0l-4.2-7c-.6-1 .1-2.3 1.3-2.3z" fill="#f2bf72"/>
+  </symbol>
+  <symbol id="clo-inteira" viewBox="0 0 64 72">
+    <path d="M26 62l-3.5 9h19L38 62z" fill="#4a4b50"/>
+    <ellipse cx="32" cy="51" rx="17.5" ry="17" fill="#6b6c6f"/>
+    <ellipse cx="32" cy="56" rx="9.5" ry="11" fill="#85868a"/>
+    <ellipse cx="16.5" cy="52.5" rx="6.2" ry="12.5" transform="rotate(14 16.5 52.5)" fill="#4a4b50"/>
+    <ellipse cx="47.5" cy="52.5" rx="6.2" ry="12.5" transform="rotate(-14 47.5 52.5)" fill="#4a4b50"/>
+    <ellipse cx="15.6" cy="47" rx="3.4" ry="6" transform="rotate(14 15.6 47)" fill="#eef2f1"/>
+    <ellipse cx="48.4" cy="47" rx="3.4" ry="6" transform="rotate(-14 48.4 47)" fill="#eef2f1"/>
+    <g transform="translate(13 4) scale(.59)"><path d="M30 11.5c1.2-3.6 3.2-6.6 6.2-8.6.9-.6 2.1-.1 2.2 1 .1 1.6-.4 3.2-1.2 4.6 1.6-1.6 3.6-2.6 5.8-3 1.1-.2 1.9.9 1.4 1.9-.9 1.7-2.2 3.1-3.8 4.1 1.5-.5 3.1-.5 4.6 0 1 .3 1.2 1.6.4 2.3-2.4 2.1-5.6 3.2-8.8 3z" fill="#f4d84f"/>
+    <circle cx="32" cy="37" r="26" fill="#f4d84f"/>
+    <circle cx="21" cy="33" r="3.7" fill="#1b1b1d"/>
+    <circle cx="43" cy="33" r="3.7" fill="#1b1b1d"/>
+    <circle cx="14.6" cy="41.5" r="5.4" fill="#e8873a"/>
+    <circle cx="49.4" cy="41.5" r="5.4" fill="#e8873a"/>
+    <path d="M27.8 36.2h8.4c1.2 0 1.9 1.3 1.3 2.3l-4.2 7c-.6 1-2 1-2.6 0l-4.2-7c-.6-1 .1-2.3 1.3-2.3z" fill="#f2bf72"/></g>
+    <path d="M27.5 67.6v3M36.5 67.6v3" stroke="#f2bf72" stroke-width="2.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="clo-alerta" viewBox="0 0 64 72">
+    <path d="M26 62l-3.5 9h19L38 62z" fill="#4a4b50"/>
+    <ellipse cx="32" cy="51" rx="17.5" ry="17" fill="#6b6c6f"/>
+    <ellipse cx="32" cy="56" rx="9.5" ry="11" fill="#85868a"/>
+    <ellipse cx="16.5" cy="52.5" rx="6.2" ry="12.5" transform="rotate(14 16.5 52.5)" fill="#4a4b50"/>
+    <ellipse cx="47.5" cy="52.5" rx="6.2" ry="12.5" transform="rotate(-14 47.5 52.5)" fill="#4a4b50"/>
+    <ellipse cx="15.6" cy="47" rx="3.4" ry="6" transform="rotate(14 15.6 47)" fill="#eef2f1"/>
+    <ellipse cx="48.4" cy="47" rx="3.4" ry="6" transform="rotate(-14 48.4 47)" fill="#eef2f1"/>
+    <g transform="translate(13 4) scale(.59)"><g transform="translate(34 14) scale(1.6) rotate(-14) translate(-34 -14)"><path d="M30 11.5c1.2-3.6 3.2-6.6 6.2-8.6.9-.6 2.1-.1 2.2 1 .1 1.6-.4 3.2-1.2 4.6 1.6-1.6 3.6-2.6 5.8-3 1.1-.2 1.9.9 1.4 1.9-.9 1.7-2.2 3.1-3.8 4.1 1.5-.5 3.1-.5 4.6 0 1 .3 1.2 1.6.4 2.3-2.4 2.1-5.6 3.2-8.8 3z" fill="#f4d84f"/></g>
+    <circle cx="32" cy="37" r="26" fill="#f4d84f"/>
+    <circle cx="21" cy="33" r="3.7" fill="#1b1b1d"/>
+    <circle cx="43" cy="33" r="3.7" fill="#1b1b1d"/>
+    <circle cx="14.6" cy="41.5" r="5.4" fill="#e8873a"/>
+    <circle cx="49.4" cy="41.5" r="5.4" fill="#e8873a"/>
+    <path d="M27.8 36.2h8.4c1.2 0 1.9 1.3 1.3 2.3l-4.2 7c-.6 1-2 1-2.6 0l-4.2-7c-.6-1 .1-2.3 1.3-2.3z" fill="#f2bf72"/></g>
+    <path d="M27.5 67.6v3M36.5 67.6v3" stroke="#f2bf72" stroke-width="2.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></symbol>
+  <symbol id="i-lua" viewBox="0 0 24 24"><path d="M19.5 14.6A8 8 0 0 1 9.4 4.5a8 8 0 1 0 10.1 10.1z"/></symbol>
 </svg>
 
 <header class="topo">
   <div class="topo-dentro">
-    <div class="marca"><svg class="selo" viewBox="0 0 18 20" aria-hidden="true"><rect x=".75" y="3.75" width="16.5" height="15.5" fill="var(--fundo)" stroke="var(--tinta)" stroke-width="1.5"/><rect x="0" y="3" width="18" height="5" fill="var(--tinta)"/><rect x="4" y="0" width="2" height="5" fill="var(--tinta)"/><rect x="12" y="0" width="2" height="5" fill="var(--tinta)"/><rect x="4" y="11" width="10" height="2" fill="var(--tinta)"/><rect x="4" y="15" width="6" height="2" fill="var(--tinta)"/></svg>Finanças do Casal</div>
+    <div class="marca"><svg class="marca-clo" viewBox="0 0 64 64" aria-hidden="true"><use href="#clo-cabeca"/></svg><span class="marca-nome">Clo</span></div>
     <nav class="abas" role="tablist" aria-label="Seções do app">
       <button class="aba" role="tab" data-aba="resumo" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-folha"/></svg><span>Resumo</span></button>
       <button class="aba" role="tab" data-aba="transacoes"><svg class="ic" aria-hidden="true"><use href="#i-lista"/></svg><span>Transações</span></button>
@@ -505,6 +585,7 @@ pre { background: var(--jornal); padding: 10px 12px; overflow-x: auto; font-size
       <button class="aba" role="tab" data-aba="config"><svg class="ic" aria-hidden="true"><use href="#i-ajustes"/></svg><span>Configurar</span></button>
     </nav>
     <button class="nuvem-ind" id="nuvem-ind" hidden data-ir-config></button>
+    <button class="tema-btn" id="tema-btn" type="button"></button>
   </div>
 </header>
 
@@ -1627,6 +1708,29 @@ function gravarPrefs(p) {
   try { localStorage.setItem(CHAVE + "-aparelho", JSON.stringify(Object.assign(lerPrefs(), p))); } catch (err) { /* sem problema */ }
 }
 
+/* ------------------------------------------------------------------ tema
+   "auto" segue o celular; "claro" e "escuro" ficam presos neste aparelho
+   (o <script> do <head> já aplica antes de pintar, sem piscar). */
+var escuroNoSistema = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+function temaEscolhido() { var t = lerPrefs().tema; return t === "claro" || t === "escuro" ? t : "auto"; }
+function temaVisivel() {
+  var t = temaEscolhido();
+  return t !== "auto" ? t : escuroNoSistema && escuroNoSistema.matches ? "escuro" : "claro";
+}
+function aplicarTema() {
+  var t = temaEscolhido(), raiz = document.documentElement;
+  if (t === "auto") delete raiz.dataset.theme; else raiz.dataset.theme = t === "claro" ? "light" : "dark";
+  // a barra do navegador acompanha o tema que está na tela
+  $$('meta[name="theme-color"]').forEach(function (m) {
+    m.setAttribute("content", t === "auto" ? (/dark/.test(m.getAttribute("media") || "") ? "#131312" : "#ffffff") : t === "escuro" ? "#131312" : "#ffffff");
+  });
+  var b = $("#tema-btn"), vis = temaVisivel();
+  b.innerHTML = ic(vis === "escuro" ? "sol" : "lua");
+  b.setAttribute("aria-label", vis === "escuro" ? "Mudar para o modo claro" : "Mudar para o modo escuro");
+  b.title = b.getAttribute("aria-label");
+}
+function escolherTema(t) { gravarPrefs({ tema: t }); aplicarTema(); }
+
 /* ================================================================ NUVEM
    Os dois veem e editam o mesmo cofre, cada um do seu celular. O que vai
    para o servidor sai daqui cifrado com a chave da senha do casal.
@@ -1846,7 +1950,8 @@ document.addEventListener("pointermove", function (ev) {
 var brindeTimer;
 function brinde(html, ms) {
   var b = $("#brinde");
-  b.innerHTML = typeof html === "string" ? esc(html) : "";
+  b.innerHTML = '<svg class="clo-brinde" viewBox="0 0 64 64" aria-hidden="true"><use href="#clo-cabeca"/></svg>' +
+    (typeof html === "string" ? "<span>" + esc(html) + "</span>" : "");
   if (typeof html !== "string") b.appendChild(html);
   b.style.display = "flex";
   clearTimeout(brindeTimer);
@@ -1910,12 +2015,12 @@ function valorCasa(v) {
 function desenharResumo() {
   var el = $("#painel-resumo");
   if (!estado.transacoes.length) {
-    el.innerHTML = '<div class="vazio"><strong>Nenhuma transação ainda</strong>' +
+    el.innerHTML = '<div class="vazio vazio-com-clo"><svg viewBox="0 0 64 72" aria-hidden="true"><use href="#clo-inteira"/></svg><div><strong>Nenhuma transação ainda</strong>' +
       '<p>Comece pela aba <a href="#" data-ir="importar">Importar</a>: é só arrastar o CSV ou OFX ' +
       "que o app do Nubank exporta, de cada um de vocês.</p>" +
       '<p>Antes, vale dar nome às duas pessoas em <a href="#" data-ir="config">Configurar</a>.</p>' +
       (nuvem.id ? "" : '<p>Se a outra pessoa já começou, peça o link de convite — ou conecte este aparelho em <a href="#" data-ir="config">Configurar</a> com a senha do casal.</p>') +
-      "</div>";
+      "</div></div>";
     ligarLinks(el);
     return;
   }
@@ -1956,8 +2061,13 @@ function desenharResumo() {
       (passou ? '<span class="acima">' + ic("alerta", "ic-p") + " passou " + brl(orcado - orcamento) + "</span>"
               : "sobram <strong class=\"num\">" + brl(orcamento - orcado) + "</strong>" +
                 (correndo ? " para " + (nDias - decorridos) + " dia" + (nDias - decorridos === 1 ? "" : "s") : "")) + "</p>";
-    h += '<div class="medidor" role="img" aria-label="' + esc(brl(orcado) + " de " + brl(orcamento) + " do orçamento" +
+    // a Clo fica de pé onde o gasto chegou: topete deitado dentro do ritmo, em pé quando passou
+    var cloAlerta = orcado > limite;
+    var cloEm = Math.max(5, Math.min(95, escala ? orcado / escala * 100 : 0));
+    h += '<div class="medidor com-clo" role="img" aria-label="' + esc(brl(orcado) + " de " + brl(orcamento) + " do orçamento" +
       (correndo ? "; o ritmo até hoje seria " + brl(ritmoHoje) : "")) + '">' +
+      '<span class="clo-poleiro" style="left:' + cloEm + '%" data-dica="' + (cloAlerta ? "Clo de topete em pé: passou do ritmo" : "Clo tranquila: dentro do ritmo") + '">' +
+      '<svg viewBox="0 0 64 72" aria-hidden="true"><use href="#clo-' + (cloAlerta ? "alerta" : "inteira") + '"/></svg></span>' +
       '<div class="medidor-cheio" style="width:' + pct(Math.min(orcado, limite)) + '"></div>' +
       (orcado > limite ? '<div class="medidor-cheio passou" style="left:' + pct(limite) + ";width:" + pct(orcado - limite) + '"></div>' : "") +
       (correndo ? '<div class="medidor-ritmo" style="left:' + pct(ritmoHoje) + '" data-dica="Ritmo até hoje: ' + esc(brl(ritmoHoje)) + '"></div>' : "") +
@@ -2270,7 +2380,8 @@ function desenharLista() {
       '<div><button class="botao-x" data-apagar aria-label="Apagar" title="Apagar">' + ic("x") + "</button></div>" +
       "</div>";
   });
-  if (!lista.length) h = '<div class="vazio-lista">Nenhuma transação ' + (filtro.todos ? "com esses filtros." : "em " + nomeMes(mesAtual) + " com esses filtros.") + "</div>";
+  if (!lista.length) h = '<div class="vazio-lista vazio-com-clo"><svg viewBox="0 0 64 72" aria-hidden="true"><use href="#clo-inteira"/></svg><span>Nenhuma transação ' +
+    (filtro.todos ? "com esses filtros." : "em " + nomeMes(mesAtual) + " com esses filtros.") + "</span></div>";
   if (lista.length > LIMITE) h += '<div class="sub" style="padding:12px 4px">Mostrando ' + LIMITE + " de " + lista.length + ". Use a busca ou os filtros para achar o resto.</div>";
   h += '<div class="tx-total"><span>' + lista.length + " transaç" + (lista.length === 1 ? "ão" : "ões") + '</span><span class="num">Gastos: ' + brl(soma) + "</span></div>";
   var el = $("#lista-tx");
@@ -2650,6 +2761,15 @@ function desenharConfig() {
   });
   h += "</tbody></table></div></section>";
 
+  /* Aparência: vale só para este aparelho */
+  var temaAqui = temaEscolhido();
+  h += '<section class="bloco"><h2 class="bloco-titulo">Aparência</h2>' +
+    '<div class="aparencia" role="radiogroup" aria-label="Aparência">' +
+    [["auto", "Automático"], ["claro", "Modo claro"], ["escuro", "Modo escuro"]].map(function (o) {
+      return '<label><input type="radio" name="tema" value="' + o[0] + '"' + (temaAqui === o[0] ? " checked" : "") + ">" + o[1] + "</label>";
+    }).join("") + "</div>" +
+    '<p class="sub">Automático segue o modo do celular. A escolha vale só para este aparelho.</p></section>';
+
   /* Backup */
   h += '<section class="bloco"><h2 class="bloco-titulo">Backup</h2>' +
     '<p class="sub" style="margin-top:0">' + (nuvem.id
@@ -2663,6 +2783,9 @@ function desenharConfig() {
   el.innerHTML = h;
 
   /* ligações */
+  $$('input[name="tema"]', el).forEach(function (r) {
+    r.addEventListener("change", function () { escolherTema(r.value); });
+  });
   $$("input[data-pessoa]", el).forEach(function (i) {
     i.addEventListener("change", function () {
       estado.pessoas[i.dataset.pessoa][i.dataset.k] = i.value.trim();
@@ -2788,6 +2911,12 @@ if (estado.transacoes.length && !estado.transacoes.some(function (t) { return N.
   mesAtual = N.mesDe(estado.transacoes[0].data);
 }
 $("#nuvem-ind").addEventListener("click", function () { trocarAba("config"); });
+$("#tema-btn").addEventListener("click", function () {
+  escolherTema(temaVisivel() === "escuro" ? "claro" : "escuro");
+  if (abaAtiva === "config") desenharConfig();
+});
+if (escuroNoSistema && escuroNoSistema.addEventListener) escuroNoSistema.addEventListener("change", aplicarTema);
+aplicarTema();
 trocarAba("resumo");
 
 /* Link de convite: .../#cofre=senha. O que vem depois do # não vai para o

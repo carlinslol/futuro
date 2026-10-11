@@ -32,3 +32,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 ## Unresolved
 
 - Sem orçamento cadastrado, a folha mostra o gasto por dia sem dias vermelhos e o topo compara com o mês anterior.
+
+## Extension: Clo (pedido do usuário, 11/10)
+
+O app passa a se chamar **Clo** e ganha uma mascote: a calopsita Clo, chapada e de frente (rosto amarelo redondo, olhos pretos, bochechas laranja da calopsita do casal, bico triangular, topete), no estilo da referência que o usuário mandou. Inteira, ela tem corpo cinza, asas cinza-escuras com a faixa branca e pés. A cabeça é a marca (topo, favicon, ícone da tela de início). Inteira, ela aparece só em momentos certos: de pé na barra do orçamento, onde o gasto chegou (topete pequeno dentro do ritmo, alto quando passou), nas telas vazias e nos avisos. As cores dela ficam só no desenho; o mundo da folhinha não muda. Junto: escolha de tema claro/escuro/automático (botão no topo e Aparência em Configurar), salva por aparelho.
