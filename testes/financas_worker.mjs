@@ -66,6 +66,10 @@ async function principal() {
   ok(/font-src 'self' data:/.test(r.headers.get("Content-Security-Policy") || ""), "CSP deixa a fonte embutida carregar");
   r = await pedir("/financas-dados.js");
   ok(r.status === 200 && (await r.text()) === "", "financas-dados.js vazio online");
+  r = await pedir("/icone-180.png");
+  const png = new Uint8Array(await r.arrayBuffer());
+  ok(r.status === 200 && r.headers.get("Content-Type") === "image/png" && png[1] === 0x50 && png[2] === 0x4e && png[3] === 0x47,
+     "ícone da tela de início em PNG");
   ok((await pedir("/qualquer")).status === 404, "o resto é 404");
 
   console.log("\n=== cofre ===");

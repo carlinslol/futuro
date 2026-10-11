@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-11T00:00:00Z",
-  "title": "Design System: Finanças do Casal",
+  "generatedAt": "2026-10-11T12:00:00Z",
+  "title": "Design System: Clo",
   "extensions": {
     "colorMeta": {
       "paper": {
@@ -19,7 +19,8 @@
           "#9e9e9e",
           "#c4c4c4",
           "#eeeeee"
-        ]
+        ],
+        "darkTwin": "paper-dark"
       },
       "newsprint": {
         "role": "neutral",
@@ -36,7 +37,8 @@
           "#9f9e9b",
           "#c5c4c0",
           "#efeeea"
-        ]
+        ],
+        "darkTwin": "newsprint-dark"
       },
       "newsprint-deep": {
         "role": "neutral",
@@ -53,7 +55,8 @@
           "#9f9e9a",
           "#c5c4bf",
           "#f0eee9"
-        ]
+        ],
+        "darkTwin": "newsprint-deep-dark"
       },
       "ink": {
         "role": "primary",
@@ -70,7 +73,8 @@
           "#9e9e9d",
           "#c4c4c3",
           "#eeeeed"
-        ]
+        ],
+        "darkTwin": "ink-dark"
       },
       "ink-soft": {
         "role": "neutral",
@@ -87,7 +91,8 @@
           "#a09e99",
           "#c5c4be",
           "#f0efe8"
-        ]
+        ],
+        "darkTwin": "ink-soft-dark"
       },
       "ink-faint": {
         "role": "neutral",
@@ -104,7 +109,8 @@
           "#a09e97",
           "#c6c4bc",
           "#f1eee6"
-        ]
+        ],
+        "darkTwin": "ink-faint-dark"
       },
       "rule": {
         "role": "neutral",
@@ -121,7 +127,8 @@
           "#9f9e9a",
           "#c5c4bf",
           "#f0efe9"
-        ]
+        ],
+        "darkTwin": "rule-dark"
       },
       "rule-strong": {
         "role": "neutral",
@@ -138,7 +145,8 @@
           "#a09e97",
           "#c6c4bc",
           "#f1efe6"
-        ]
+        ],
+        "darkTwin": "rule-strong-dark"
       },
       "folhinha-red": {
         "role": "secondary",
@@ -155,7 +163,8 @@
           "#ff5c63",
           "#ff8587",
           "#ffc0bd"
-        ]
+        ],
+        "darkTwin": "folhinha-red-dark"
       },
       "person-1-blue": {
         "role": "tertiary",
@@ -172,7 +181,8 @@
           "#539fff",
           "#79c6ff",
           "#aff2ff"
-        ]
+        ],
+        "darkTwin": "person-1-blue-dark"
       },
       "person-2-orange": {
         "role": "tertiary",
@@ -189,7 +199,8 @@
           "#f5713e",
           "#ff9866",
           "#ffcca2"
-        ]
+        ],
+        "darkTwin": "person-2-orange-dark"
       },
       "income-green": {
         "role": "tertiary",
@@ -206,7 +217,8 @@
           "#60b477",
           "#86db9b",
           "#b6ffc8"
-        ]
+        ],
+        "darkTwin": "income-green-dark"
       },
       "notice-yellow": {
         "role": "neutral",
@@ -214,6 +226,241 @@
         "canonical": "oklch(96.2% 0.051 91)",
         "cssVar": "--aviso-fundo",
         "dark": "#3a2f12",
+        "tonalRamp": [
+          "#130900",
+          "#2d2302",
+          "#4a3f1e",
+          "#685d3b",
+          "#887d5a",
+          "#aa9e7a",
+          "#d0c49f",
+          "#fbeec8"
+        ],
+        "darkTwin": "notice-yellow-dark"
+      },
+      "paper-dark": {
+        "role": "neutral",
+        "displayName": "Cold Paper (dark)",
+        "canonical": "oklch(18.6% 0.002 107)",
+        "cssVar": "--fundo",
+        "theme": "dark",
+        "lightTwin": "paper",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#7d7d7d",
+          "#9e9e9e",
+          "#c4c4c4",
+          "#eeeeee"
+        ]
+      },
+      "newsprint-dark": {
+        "role": "neutral",
+        "displayName": "Jornal (dark)",
+        "canonical": "oklch(23.9% 0.004 107)",
+        "cssVar": "--jornal",
+        "theme": "dark",
+        "lightTwin": "newsprint",
+        "tonalRamp": [
+          "#0c0b09",
+          "#252421",
+          "#40403d",
+          "#5e5e5a",
+          "#7e7d7a",
+          "#9f9e9b",
+          "#c5c4c0",
+          "#efeeea"
+        ]
+      },
+      "newsprint-deep-dark": {
+        "role": "neutral",
+        "displayName": "Jornal Deep (dark)",
+        "canonical": "oklch(28.4% 0.005 107)",
+        "cssVar": "--jornal-2",
+        "theme": "dark",
+        "lightTwin": "newsprint-deep",
+        "tonalRamp": [
+          "#0c0b08",
+          "#252420",
+          "#41403c",
+          "#5e5e59",
+          "#7e7d79",
+          "#9f9e9a",
+          "#c5c4bf",
+          "#f0eee9"
+        ]
+      },
+      "ink-dark": {
+        "role": "primary",
+        "displayName": "Calendar Ink (dark)",
+        "canonical": "oklch(96.1% 0.007 97)",
+        "cssVar": "--tinta",
+        "theme": "dark",
+        "lightTwin": "ink",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#242423",
+          "#40403f",
+          "#5e5e5c",
+          "#7d7d7c",
+          "#9e9e9d",
+          "#c4c4c3",
+          "#eeeeed"
+        ]
+      },
+      "ink-soft-dark": {
+        "role": "neutral",
+        "displayName": "Soft Ink (dark)",
+        "canonical": "oklch(79.5% 0.011 95)",
+        "cssVar": "--tinta-2",
+        "theme": "dark",
+        "lightTwin": "ink-soft",
+        "tonalRamp": [
+          "#0c0b08",
+          "#252420",
+          "#41403b",
+          "#5f5e59",
+          "#7e7d78",
+          "#a09e99",
+          "#c5c4be",
+          "#f0efe8"
+        ]
+      },
+      "ink-faint-dark": {
+        "role": "neutral",
+        "displayName": "Faint Ink (dark)",
+        "canonical": "oklch(66.9% 0.012 95)",
+        "cssVar": "--tinta-3",
+        "theme": "dark",
+        "lightTwin": "ink-faint",
+        "tonalRamp": [
+          "#0d0b06",
+          "#26241e",
+          "#424039",
+          "#605e57",
+          "#7f7d76",
+          "#a09e97",
+          "#c6c4bc",
+          "#f1eee6"
+        ]
+      },
+      "rule-dark": {
+        "role": "neutral",
+        "displayName": "Hairline (dark)",
+        "canonical": "oklch(29.2% 0.005 107)",
+        "cssVar": "--linha",
+        "theme": "dark",
+        "lightTwin": "rule",
+        "tonalRamp": [
+          "#0c0b08",
+          "#252420",
+          "#41403c",
+          "#5e5e59",
+          "#7e7d79",
+          "#9f9e9a",
+          "#c5c4bf",
+          "#f0efe9"
+        ]
+      },
+      "rule-strong-dark": {
+        "role": "neutral",
+        "displayName": "Strong Hairline (dark)",
+        "canonical": "oklch(38.6% 0.008 98)",
+        "cssVar": "--base",
+        "theme": "dark",
+        "lightTwin": "rule-strong",
+        "tonalRamp": [
+          "#0d0b06",
+          "#26241e",
+          "#414039",
+          "#5f5e57",
+          "#7f7d76",
+          "#a09e97",
+          "#c6c4bc",
+          "#f1efe6"
+        ]
+      },
+      "folhinha-red-dark": {
+        "role": "secondary",
+        "displayName": "Folhinha Red (dark)",
+        "canonical": "oklch(71.2% 0.181 21)",
+        "cssVar": "--vermelho",
+        "theme": "dark",
+        "lightTwin": "folhinha-red",
+        "tonalRamp": [
+          "#370000",
+          "#660000",
+          "#8d0000",
+          "#b40022",
+          "#dc3442",
+          "#ff5c63",
+          "#ff8587",
+          "#ffc0bd"
+        ]
+      },
+      "person-1-blue-dark": {
+        "role": "tertiary",
+        "displayName": "Person 1 Blue (dark)",
+        "canonical": "oklch(62.2% 0.161 255)",
+        "cssVar": "--p1",
+        "theme": "dark",
+        "lightTwin": "person-1-blue",
+        "tonalRamp": [
+          "#000043",
+          "#00156f",
+          "#003992",
+          "#005bb6",
+          "#2f7ddb",
+          "#539fff",
+          "#79c6ff",
+          "#aff2ff"
+        ]
+      },
+      "person-2-orange-dark": {
+        "role": "tertiary",
+        "displayName": "Person 2 Orange (dark)",
+        "canonical": "oklch(62.2% 0.173 40)",
+        "cssVar": "--p2",
+        "theme": "dark",
+        "lightTwin": "person-2-orange",
+        "tonalRamp": [
+          "#320000",
+          "#5e0000",
+          "#830000",
+          "#a82800",
+          "#cf4e12",
+          "#f5713e",
+          "#ff9866",
+          "#ffcca2"
+        ]
+      },
+      "income-green-dark": {
+        "role": "tertiary",
+        "displayName": "Income Green (dark)",
+        "canonical": "oklch(73.3% 0.144 152)",
+        "cssVar": "--bom",
+        "theme": "dark",
+        "lightTwin": "income-green",
+        "tonalRamp": [
+          "#001500",
+          "#003200",
+          "#005019",
+          "#127037",
+          "#3c9156",
+          "#60b477",
+          "#86db9b",
+          "#b6ffc8"
+        ]
+      },
+      "notice-yellow-dark": {
+        "role": "neutral",
+        "displayName": "Notice Yellow (dark)",
+        "canonical": "oklch(31.0% 0.047 89)",
+        "cssVar": "--aviso-fundo",
+        "theme": "dark",
+        "lightTwin": "notice-yellow",
         "tonalRamp": [
           "#130900",
           "#2d2302",
@@ -231,25 +478,93 @@
         "displayName": "Sheet Head",
         "purpose": "Month and year or tab name, uppercase; 58px phone, 50px under 380px."
       },
+      "display-phone": {
+        "displayName": "Sheet Head (phone)",
+        "purpose": "Sheet head at 760px and below."
+      },
+      "display-narrow": {
+        "displayName": "Sheet Head (narrow)",
+        "purpose": "Sheet head under 380px."
+      },
       "headline": {
         "displayName": "Headline Figure",
-        "purpose": "Main budget amount; 52px phone. Bill value 60px, per-person totals 40px."
+        "purpose": "Main budget amount; 52px phone. Bill value 60px (52px phone), per-person totals 40px (34px phone)."
+      },
+      "headline-phone": {
+        "displayName": "Headline Figure (phone)",
+        "purpose": "Main budget amount and bill value on phone."
+      },
+      "bill-figure": {
+        "displayName": "Bill Figure",
+        "purpose": "Current card bill value in Cartão."
+      },
+      "person-figure": {
+        "displayName": "Person Figure",
+        "purpose": "Per-person totals in Resumo; empty-state titles."
+      },
+      "person-figure-phone": {
+        "displayName": "Person Figure (phone)",
+        "purpose": "Per-person totals on phone."
       },
       "title": {
         "displayName": "Block Title",
-        "purpose": "Uppercase block titles; sub-titles 19px."
+        "purpose": "Uppercase block titles; sub-titles 19px; card owner and mini-folha day 30px (23px small mini-folha)."
+      },
+      "subtitle": {
+        "displayName": "Sub-title",
+        "purpose": "Uppercase sub-titles inside blocks."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "The name \"Clo\" in the top bar beside Clo's head at 32px; natural case."
+      },
+      "mini-folha-day": {
+        "displayName": "Mini-folha Day",
+        "purpose": "Mini-folha day number; card-owner names in Cartão."
+      },
+      "mini-folha-day-small": {
+        "displayName": "Mini-folha Day (small)",
+        "purpose": "Day number in the 44px mini-folha of Transações day groups."
       },
       "day-number": {
         "displayName": "Day Number",
-        "purpose": "Calendar cells; 22px phone; future days 600 in faint ink."
+        "purpose": "Calendar cells; 22px phone; future days 600 in faint ink; holiday names Folha 600 13px (11.5px phone)."
+      },
+      "day-number-phone": {
+        "displayName": "Day Number (phone)",
+        "purpose": "Calendar cell numbers on phone."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "Budget sentence under the headline figure; tapped-day heading at 650."
+      },
+      "drop-call": {
+        "displayName": "Drop Call",
+        "purpose": "The call to action inside the file drop zone."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Text and list rows, tabular money, 72ch max."
+        "purpose": "Text and list rows (14px), tabular money, 72ch max; drop-zone call 17px."
+      },
+      "body-row": {
+        "displayName": "Body Row",
+        "purpose": "List rows, transaction rows, sub-notes, notices, toast text."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Notes, legends, table heads, day amounts."
+        "purpose": "Notes, legends, table heads, sync pill 12px; day amounts 12px (11px phone, 10px under 380px)."
+      },
+      "label-small": {
+        "displayName": "Small Label",
+        "purpose": "Table heads, sync pill, day-cell amounts, day-group dates."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Mini-folha header strips (uppercase; 10px small), month under the mini-folha day, status tags; phone tab labels 11.5px."
+      },
+      "caption-small": {
+        "displayName": "Small Caption",
+        "purpose": "Header strip of the small mini-folha."
       }
     },
     "fonts": [
@@ -304,7 +619,7 @@
       {
         "name": "phone",
         "value": "760px",
-        "purpose": "Bottom tab bar, smaller sheet, reflowed transaction rows."
+        "purpose": "Bottom tab bar, 52px top bar, 44px theme toggle, smaller sheet, reflowed transaction rows, appearance options as a three-column segmented row."
       },
       {
         "name": "narrow",
@@ -314,8 +629,65 @@
     ],
     "themes": {
       "light": "default and [data-theme=light]",
-      "dark": "prefers-color-scheme: dark unless [data-theme=light], or [data-theme=dark]"
-    }
+      "dark": "prefers-color-scheme: dark unless [data-theme=light], or [data-theme=dark]",
+      "choice": "Automático / Claro / Escuro, saved per device in localStorage (financas-casal-v1-aparelho.tema); an inline <head> script sets data-theme before first paint.",
+      "themeColor": {
+        "light": "#ffffff",
+        "dark": "#131312",
+        "rule": "meta theme-color follows the visible theme"
+      }
+    },
+    "illustration": {
+      "name": "Clo",
+      "kind": "flat filled SVG, front-facing cockatiel",
+      "rule": "Illustration-only colors: never used in text, fills, borders, charts or states. Same in both themes.",
+      "colors": {
+        "face-crest": "#f4d84f",
+        "cheeks": "#e8873a",
+        "beak-feet": "#f2bf72",
+        "eyes": "#1b1b1d",
+        "body": "#6b6c6f",
+        "belly": "#85868a",
+        "wings": "#4a4b50",
+        "wing-bar": "#eef2f1"
+      },
+      "symbols": [
+        {
+          "id": "clo-cabeca",
+          "viewBox": "0 0 64 64",
+          "use": "Brand mark 32px beside the wordmark; favicon; 180px home-screen PNG on white served at /icone-180.png; toast lead 22px."
+        },
+        {
+          "id": "clo-inteira",
+          "viewBox": "0 0 64 72",
+          "use": "Calm: small crest, folded wings. Budget meter within pace (52x58px); empty Resumo 120x135px (88x99px phone); empty Transações list 52x58px."
+        },
+        {
+          "id": "clo-alerta",
+          "viewBox": "0 0 64 72",
+          "use": "Alert: crest fanned high, wings lifted. Budget meter only, once spending passes the pace."
+        }
+      ],
+      "placements": [
+        "top-bar mark",
+        "budget meter at spent point, clamped 5-95%, pace tick layered above her feet",
+        "empty Resumo",
+        "empty Transações list",
+        "toast"
+      ]
+    },
+    "layers": [
+      {
+        "name": "clo-perch",
+        "value": "z-index 1",
+        "purpose": "Clo on the budget meter."
+      },
+      {
+        "name": "pace-tick",
+        "value": "z-index 2",
+        "purpose": "Pace tick above Clo's feet."
+      }
+    ]
   },
   "components": [
     {
@@ -386,20 +758,53 @@
       "name": "Budget Meter",
       "kind": "custom",
       "refersTo": null,
-      "description": "Ink fill to today's pace, red past it, haloed pace tick.",
-      "html": "<div class=\"ds-med\"><div class=\"ds-med-cheio\" style=\"width:35%\"></div><div class=\"ds-med-cheio ds-passou\" style=\"left:36%;width:14%\"></div><div class=\"ds-med-ritmo\" style=\"left:35.5%\"></div></div>",
-      "css": ".ds-med{position:relative;height:12px;background:var(--jornal-2,#e6e5e0);margin:12px 0;max-width:560px}.ds-med-cheio{position:absolute;left:0;top:0;bottom:0;background:var(--tinta,#151514)}.ds-passou{background:var(--vermelho,#c4122f)}.ds-med-ritmo{position:absolute;top:-6px;bottom:-6px;width:2px;margin-left:-1px;background:var(--tinta,#151514);box-shadow:0 0 0 2px var(--fundo,#fff)}"
+      "description": "Ink fill to today's pace, red past it, haloed pace tick layered above Clo, who stands where spending reached (5-95%).",
+      "html": "<div class=\"ds-med\"><span class=\"ds-poleiro\" style=\"left:30%\"><svg viewBox=\"0 0 64 72\" aria-hidden=\"true\"><path d=\"M26 62l-3.5 9h19L38 62z\" fill=\"#4a4b50\"/> <ellipse cx=\"32\" cy=\"51\" rx=\"17.5\" ry=\"17\" fill=\"#6b6c6f\"/> <ellipse cx=\"32\" cy=\"56\" rx=\"9.5\" ry=\"11\" fill=\"#85868a\"/> <ellipse cx=\"16.5\" cy=\"52.5\" rx=\"6.2\" ry=\"12.5\" transform=\"rotate(14 16.5 52.5)\" fill=\"#4a4b50\"/> <ellipse cx=\"47.5\" cy=\"52.5\" rx=\"6.2\" ry=\"12.5\" transform=\"rotate(-14 47.5 52.5)\" fill=\"#4a4b50\"/> <ellipse cx=\"15.6\" cy=\"47\" rx=\"3.4\" ry=\"6\" transform=\"rotate(14 15.6 47)\" fill=\"#eef2f1\"/> <ellipse cx=\"48.4\" cy=\"47\" rx=\"3.4\" ry=\"6\" transform=\"rotate(-14 48.4 47)\" fill=\"#eef2f1\"/> <g transform=\"translate(13 4) scale(.59)\"><path d=\"M30 11.5c1.2-3.6 3.2-6.6 6.2-8.6.9-.6 2.1-.1 2.2 1 .1 1.6-.4 3.2-1.2 4.6 1.6-1.6 3.6-2.6 5.8-3 1.1-.2 1.9.9 1.4 1.9-.9 1.7-2.2 3.1-3.8 4.1 1.5-.5 3.1-.5 4.6 0 1 .3 1.2 1.6.4 2.3-2.4 2.1-5.6 3.2-8.8 3z\" fill=\"#f4d84f\"/> <circle cx=\"32\" cy=\"37\" r=\"26\" fill=\"#f4d84f\"/> <circle cx=\"21\" cy=\"33\" r=\"3.7\" fill=\"#1b1b1d\"/> <circle cx=\"43\" cy=\"33\" r=\"3.7\" fill=\"#1b1b1d\"/> <circle cx=\"14.6\" cy=\"41.5\" r=\"5.4\" fill=\"#e8873a\"/> <circle cx=\"49.4\" cy=\"41.5\" r=\"5.4\" fill=\"#e8873a\"/> <path d=\"M27.8 36.2h8.4c1.2 0 1.9 1.3 1.3 2.3l-4.2 7c-.6 1-2 1-2.6 0l-4.2-7c-.6-1 .1-2.3 1.3-2.3z\" fill=\"#f2bf72\"/></g> <path d=\"M27.5 67.6v3M36.5 67.6v3\" stroke=\"#f2bf72\" stroke-width=\"2.6\" stroke-linecap=\"round\"/></svg></span><div class=\"ds-med-cheio\" style=\"width:35%\"></div><div class=\"ds-med-ritmo\" style=\"left:40%\"></div><div class=\"ds-med-fim\" style=\"left:100%\"></div></div>",
+      "css": ".ds-med{position:relative;height:12px;background:var(--jornal-2,#e6e5e0);margin:72px 0 12px;max-width:560px}.ds-med-cheio{position:absolute;left:0;top:0;bottom:0;background:var(--tinta,#151514)}.ds-passou{background:var(--vermelho,#c4122f)}.ds-med-ritmo{position:absolute;z-index:2;top:-6px;bottom:-6px;width:2px;margin-left:-1px;background:var(--tinta,#151514);box-shadow:0 0 0 2px var(--fundo,#fff)}.ds-med-fim{position:absolute;top:-6px;bottom:-6px;width:2px;margin-left:-1px;background:var(--tinta-3,#74726b)}.ds-poleiro{position:absolute;z-index:1;bottom:calc(100% - 1px);width:52px;height:58px;margin-left:-26px}.ds-poleiro svg{width:100%;height:100%;display:block;overflow:visible}"
+    },
+    {
+      "name": "Theme Toggle",
+      "kind": "button",
+      "refersTo": "theme-toggle",
+      "description": "Top-bar sun/moon square that flips this device between light and dark; 44px on phone.",
+      "html": "<button class=\"ds-tema\" aria-label=\"Mudar para o modo escuro\"><svg class=\"ds-ic\" viewBox=\"0 0 24 24\"><path d=\"M19.5 14.6A8 8 0 0 1 9.4 4.5a8 8 0 1 0 10.1 10.1z\"/></svg></button>",
+      "css": ".ds-tema{display:grid;place-items:center;width:36px;height:36px;border:1px solid var(--linha,#e2e1dc);border-radius:2px;background:var(--fundo,#fff);color:var(--tinta-2,#53524d);cursor:pointer}.ds-tema:hover{border-color:var(--base,#c4c2ba);color:var(--tinta,#151514)}.ds-tema:focus-visible{outline:2px solid var(--tinta,#151514);outline-offset:2px}.ds-ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}"
+    },
+    {
+      "name": "Appearance Options",
+      "kind": "chip",
+      "refersTo": "appearance-option",
+      "description": "Configurar → Aparência radio row; same chip as the person choice. On phone: three equal segmented buttons, radio dots visually hidden.",
+      "html": "<div class=\"ds-aparencia\" role=\"radiogroup\" aria-label=\"Aparência\"><label><input type=\"radio\" name=\"t\" checked>Automático</label><label><input type=\"radio\" name=\"t\">Claro</label><label><input type=\"radio\" name=\"t\">Escuro</label></div>",
+      "css": ".ds-aparencia{display:flex;flex-wrap:wrap;gap:8px;font:15px system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;color:var(--tinta,#151514)}.ds-aparencia label{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:9px 16px;border:1px solid var(--base,#c4c2ba);border-radius:2px;cursor:pointer}.ds-aparencia label:hover{border-color:var(--tinta-3,#74726b)}.ds-aparencia label:has(input:checked){border-color:var(--tinta,#151514);box-shadow:inset 0 0 0 1px var(--tinta,#151514);background:var(--jornal,#f0efeb);font-weight:650}.ds-aparencia label:focus-within{outline:2px solid var(--tinta,#151514);outline-offset:2px}.ds-aparencia input{accent-color:var(--tinta,#151514);width:16px;height:16px}"
+    },
+    {
+      "name": "Clo Mark",
+      "kind": "custom",
+      "refersTo": "clo-mark",
+      "description": "Brand mark: Clo's head at 32px beside the Folha 800 26px wordmark.",
+      "html": "<div class=\"ds-marca\"><svg viewBox=\"0 0 64 64\" aria-hidden=\"true\"><path d=\"M30 11.5c1.2-3.6 3.2-6.6 6.2-8.6.9-.6 2.1-.1 2.2 1 .1 1.6-.4 3.2-1.2 4.6 1.6-1.6 3.6-2.6 5.8-3 1.1-.2 1.9.9 1.4 1.9-.9 1.7-2.2 3.1-3.8 4.1 1.5-.5 3.1-.5 4.6 0 1 .3 1.2 1.6.4 2.3-2.4 2.1-5.6 3.2-8.8 3z\" fill=\"#f4d84f\"/> <circle cx=\"32\" cy=\"37\" r=\"26\" fill=\"#f4d84f\"/> <circle cx=\"21\" cy=\"33\" r=\"3.7\" fill=\"#1b1b1d\"/> <circle cx=\"43\" cy=\"33\" r=\"3.7\" fill=\"#1b1b1d\"/> <circle cx=\"14.6\" cy=\"41.5\" r=\"5.4\" fill=\"#e8873a\"/> <circle cx=\"49.4\" cy=\"41.5\" r=\"5.4\" fill=\"#e8873a\"/> <path d=\"M27.8 36.2h8.4c1.2 0 1.9 1.3 1.3 2.3l-4.2 7c-.6 1-2 1-2.6 0l-4.2-7c-.6-1 .1-2.3 1.3-2.3z\" fill=\"#f2bf72\"/></svg><span>Clo</span></div>",
+      "css": ".ds-marca{display:flex;align-items:center;gap:10px;color:var(--tinta,#151514)}.ds-marca svg{width:32px;height:32px;flex:none}.ds-marca span{font:800 26px/1 \"Folha\",\"Arial Narrow\",\"Roboto Condensed\",sans-serif;letter-spacing:.01em}"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Transient ink strip led by Clo's head; the only lifted element besides the tooltip.",
+      "html": "<div class=\"ds-brinde\"><svg viewBox=\"0 0 64 64\" aria-hidden=\"true\"><path d=\"M30 11.5c1.2-3.6 3.2-6.6 6.2-8.6.9-.6 2.1-.1 2.2 1 .1 1.6-.4 3.2-1.2 4.6 1.6-1.6 3.6-2.6 5.8-3 1.1-.2 1.9.9 1.4 1.9-.9 1.7-2.2 3.1-3.8 4.1 1.5-.5 3.1-.5 4.6 0 1 .3 1.2 1.6.4 2.3-2.4 2.1-5.6 3.2-8.8 3z\" fill=\"#f4d84f\"/> <circle cx=\"32\" cy=\"37\" r=\"26\" fill=\"#f4d84f\"/> <circle cx=\"21\" cy=\"33\" r=\"3.7\" fill=\"#1b1b1d\"/> <circle cx=\"43\" cy=\"33\" r=\"3.7\" fill=\"#1b1b1d\"/> <circle cx=\"14.6\" cy=\"41.5\" r=\"5.4\" fill=\"#e8873a\"/> <circle cx=\"49.4\" cy=\"41.5\" r=\"5.4\" fill=\"#e8873a\"/> <path d=\"M27.8 36.2h8.4c1.2 0 1.9 1.3 1.3 2.3l-4.2 7c-.6 1-2 1-2.6 0l-4.2-7c-.6-1 .1-2.3 1.3-2.3z\" fill=\"#f2bf72\"/></svg><span>Categoria salva.</span></div>",
+      "css": ".ds-brinde{display:inline-flex;align-items:center;gap:10px;padding:11px 14px;background:var(--tinta,#151514);color:var(--fundo,#fff);font:14px system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;box-shadow:var(--sombra-solta,0 6px 24px rgba(21,21,20,.16))}.ds-brinde svg{width:22px;height:22px;flex:none}"
     }
   ],
   "narrative": {
     "northStar": "A Folhinha de Parede",
-    "overview": "The app is the Brazilian tear-off wall calendar hung by the kitchen door: a sheet of cold white paper, black ink, and the red the calendar reserves for days that matter. The month is the sheet. Its name is printed huge in an extra-condensed face, the weekdays run across in a solid ink band, and each day carries the money that left on it. You read the month at a glance, then tap a day to see what went out.\n\nDensity is that of a printed calendar or a newspaper page: many numbers, tightly set, held apart by 1px rules rather than boxes. A second layer of grey \"jornal\" newsprint carries hover, filters, logs and quiet surfaces. Nothing floats at rest; corners are square; the only heavy marks are ink rules under section heads. The system explicitly refuses the dashboard of rounded, shadowed cards with loose numbers in equal blocks.\n\nTwo colors belong to people, not to the system: Person 1 blue and Person 2 orange. They appear only as small square markers, bar segments, and stacked columns, always with the person's name beside them.",
+    "overview": "The app is the Brazilian tear-off wall calendar hung by the kitchen door: a sheet of cold white paper, black ink, and the red the calendar reserves for days that matter. The month is the sheet. Its name is printed huge in an extra-condensed face, the weekdays run across in a solid ink band, and each day carries the money that left on it. You read the month at a glance, then tap a day to see what went out.\n\nDensity is that of a printed calendar or a newspaper page: many numbers, tightly set, held apart by 1px rules rather than boxes. A second layer of grey \"jornal\" newsprint carries hover, filters, logs and quiet surfaces. Nothing floats at rest; corners are square; the only heavy marks are ink rules under section heads. The system explicitly refuses the dashboard of rounded, shadowed cards with loose numbers in equal blocks.\n\nTwo colors belong to people, not to the system: Person 1 blue and Person 2 orange. They appear only as small square markers, bar segments, and stacked columns, always with the person's name beside them.\n\nThe app is named Clo, after its mascot: Clo, the couple's cockatiel, drawn flat and front-facing in the colors of the real bird. Her head is the brand mark. Whole, she appears only at a few fixed moments and keeps her colors inside her drawing; the folhinha world around her does not change.",
     "keyCharacteristics": [
-      "Cold white paper, black ink, newsprint grey second layer; light and dark themes with the same roles.",
+      "Cold white paper, black ink, newsprint grey second layer; light and dark themes with the same roles, automatic or chosen per device.",
       "Extra-condensed \"Folha\" numerals for the month, headline values, section titles and day numbers; system sans with tabular numerals for everything else.",
       "Square corners (2px max), 1px hairline rules, 2-3px ink rules for heads, no card shadows.",
       "Red is the limit color, never decoration.",
-      "Single-stroke SVG icons at 1.75 stroke."
+      "Single-stroke SVG icons at 1.75 stroke.",
+      "Clo, a flat filled cockatiel illustration, is the brand mark and the only full-color drawing; her colors never enter the UI."
     ],
     "rules": [
       {
@@ -418,8 +823,13 @@
         "section": "colors"
       },
       {
+        "name": "The Feathers Stay in the Drawing Rule",
+        "body": "Clo's yellow, orange and greys exist only inside her illustration. No text, fill, border, chart or state ever borrows them; the cockatiel yellow is not a brand hue.",
+        "section": "colors"
+      },
+      {
         "name": "The Folha for Figures Rule",
-        "body": "The condensed face is for the month, headline amounts, block titles, day numbers and the mini-folha date. Body copy, buttons and form labels stay in the system face.",
+        "body": "The condensed face is for the month, headline amounts, block titles, day numbers, the mini-folha date and the \"Clo\" wordmark. Body copy, buttons and form labels stay in the system face.",
         "section": "typography"
       },
       {
@@ -440,13 +850,17 @@
       "**Do** set every money amount in tabular numerals; reserve Folha for headline figures and day numbers.",
       "**Do** put the person's name beside every blue or orange mark.",
       "**Do** use jornal for hover and quiet surfaces, and inset ink for selection.",
-      "**Do** keep corners at 0 for surfaces and 2px for controls."
+      "**Do** keep corners at 0 for surfaces and 2px for controls.",
+      "**Do** use Clo's head as the brand mark (top bar, favicon, home-screen icon, toast) and the whole Clo only on the budget meter and in empty states.",
+      "**Do** keep light and dark as the same roles, applied before first paint from the device's saved choice, with `theme-color` following the visible theme."
     ],
     "donts": [
       "**Don't** build rounded, shadowed dashboard cards or equal blocks of loose numbers.",
       "**Don't** use red as an accent, heading color, link color or decoration.",
       "**Don't** add shadows to anything that sits on the page; the soft lift is for tooltip and toast only.",
       "**Don't** introduce a brand hue; emphasis is ink.",
+      "**Don't** let Clo's colors leave her drawing, and don't add new Clo poses or placements beyond the three symbols and the placements above.",
+      "**Don't** make Clo the only carrier of a state; the numbers and words lead, she follows.",
       "**Don't** use cream or warm paper; the page is cold white.",
       "**Don't** use emoji or icon fonts; icons are the single-stroke SVG sprite."
     ]
