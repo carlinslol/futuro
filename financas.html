@@ -175,7 +175,9 @@ p { max-width: 72ch; }
 .legenda span { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ------------------------------------------------------------- resumo */
-.res-grade { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 56px; align-items: start; }
+.res-grade { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 0 56px; align-items: start; }
+.res-dir { grid-column: 2; grid-row: 1 / 3; }
+.res-maiores { grid-column: 1; grid-row: 2; margin-top: 44px; }
 
 .orc-valor { font-family: var(--fonte-folha); font-weight: 800; font-size: 68px; line-height: .9; letter-spacing: -0.005em; font-variant-numeric: lining-nums; }
 .orc-de { color: var(--tinta-3); font-size: .62em; white-space: nowrap; }
@@ -408,6 +410,9 @@ pre { background: var(--jornal); padding: 10px 12px; overflow-x: auto; font-size
 
 @media (max-width: 960px) {
   .res-grade, .cartao-grade, .duas-col { grid-template-columns: minmax(0, 1fr); gap: 44px; }
+  .res-grade { grid-template-rows: none; }
+  .res-dir, .res-maiores { grid-column: auto; grid-row: auto; }
+  .res-maiores { margin-top: 0; }
 }
 @media (max-width: 960px) and (min-width: 761px) {
   .tx-cab, .tx { grid-template-columns: minmax(0, 1fr) 104px 190px 118px 100px 32px; }
@@ -2010,19 +2015,19 @@ function desenharResumo() {
     " Nome pequeno na casa: feriado nacional.</span>" + legenda("quem pagou") + "</div>";
   h += '<div class="dia-detalhe" id="dia-detalhe"></div>';
 
-  /* Maiores gastos */
-  h += '<section class="bloco"><h2 class="bloco-titulo">Maiores gastos do mês</h2><ul class="lista-simples lista-topo">';
+  /* Maiores gastos: no desktop fica embaixo da folha; no celular, depois de tudo */
+  var mg = '<section class="bloco res-maiores"><h2 class="bloco-titulo">Maiores gastos do mês</h2><ul class="lista-simples lista-topo">';
   r.maiores.forEach(function (t) {
     var pp = N.pessoaDaConta(t.conta);
-    h += '<li><span class="desc-curta" title="' + esc(t.descricao) + '">' + bolinha(pp) + esc(N.descricaoCurta(t.descricao)) +
+    mg += '<li><span class="desc-curta" title="' + esc(t.descricao) + '">' + bolinha(pp) + esc(N.descricaoCurta(t.descricao)) +
       ' <span class="mudo">· ' + esc(nome(pp)) + " · " + dataBR(t.data) + '</span></span><span class="num">' + brl(t.valor) + "</span></li>";
   });
-  if (!r.maiores.length) h += '<li class="sub">Nada neste mês.</li>';
-  h += "</ul></section>";
+  if (!r.maiores.length) mg += '<li class="sub">Nada neste mês.</li>';
+  mg += "</ul></section>";
   h += "</div>";
 
   /* Coluna da direita */
-  h += "<div>";
+  h += '<div class="res-dir">';
 
   /* Categorias */
   h += '<section class="bloco"><h2 class="bloco-titulo">Por categoria</h2>';
@@ -2095,7 +2100,7 @@ function desenharResumo() {
       (pend ? (cx ? "<br>" : "") + "Inclui " + pend + " transaç" + (pend === 1 ? "ão pendente" : "ões pendentes") +
         " (o banco ainda não fechou; aparecem marcadas em Transações)." : "") + "</p>";
   }
-  h += "</div></div>";
+  h += "</div>" + mg + "</div>";
 
   el.innerHTML = h;
   ligarLinks(el);
