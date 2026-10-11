@@ -13,3 +13,7 @@ financas-backup-*.json
 node_modules/
 __pycache__/
 *.pyc
+
+# log da tarefa agendada (agendar.bat)
+sincronizar.log
+sincronizar.log.old

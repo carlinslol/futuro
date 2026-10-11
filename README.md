@@ -126,6 +126,13 @@ Depois, no seu computador:
    sem abrir navegador. Se a senha não abrir o cofre de vocês, ele só avisa:
    nunca cria um cofre novo.
 
+**Sozinho, todo dia:** dê duplo clique em **`agendar.bat`**. Ele cria uma
+tarefa no Agendador do Windows que roda o sincronizar às 08:00 e às 20:00, e
+também ao entrar no Windows (se o PC estava desligado na hora, roda assim que
+ligar). Roda sem abrir janela; o que cada rodada fez fica no
+`sincronizar.log`. Outros horários: `agendar.bat 07:30` ou
+`agendar.bat 07:30 19:00`. Para tirar: `agendar.bat remover`.
+
 **Cada um no seu computador:** como vocês não moram juntos, dá para cada um
 rodar o script no próprio computador, preenchendo só a própria pessoa no
 config (a outra fica em branco). Cada um sobe as próprias transações para o
@@ -228,6 +235,8 @@ Estorno no cartão abate da categoria.
 | `worker/` | o servidor: `index.js`, `wrangler.toml`, `schema.sql` |
 | `financas_pluggy.py` | baixa as transações pelo Meu Pluggy / Pluggy (opcional) |
 | `sincronizar.bat` | baixa do Pluggy e sobe para o cofre |
+| `agendar.bat` / `agendar.ps1` | faz o Windows rodar o sincronizar sozinho, todo dia |
+| `sincronizar_oculto.vbs` | o que a tarefa chama: roda o sincronizar sem janela e grava o log |
 | `subir_cofre.mjs` | sobe o `financas-dados.js` para o cofre, cifrado (Node) |
 | `exemplos/` | faturas e extratos **fictícios** para testar sem dado real |
 | `financas_config.txt` | criado pelo script; **segredo** |
